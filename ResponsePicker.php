@@ -1,5 +1,5 @@
 <?php
-    class ResponsePicker extends PluginBase
+    class ResponsePicker extends \ls\pluginmanager\PluginBase
     {
 
         static protected $description = 'This plugins allows a user to pick which response to work on if multiple candidate responses exist.';
@@ -7,15 +7,70 @@
 
         protected $storage = 'DbStorage';
 
-        public function __construct(PluginManager $manager, $id)
+        public function init()
         {
-            parent::__construct($manager, $id);
             $this->subscribe('beforeLoadResponse');
             // Provides survey specific settings.
             $this->subscribe('beforeSurveySettings');
 
             // Saves survey specific settings.
             $this->subscribe('newSurveySettings');
+            
+            $this->subscribe('newDirectRequest');
+        }
+        
+        protected function viewResponse($response, $surveyId) {
+            $out = '<html><title></title><body>';
+            $rows = [];
+            foreach ($response as $key => $value) {
+                $rows[] = [
+                    'question' => $key,
+                    'answer' => $value
+                ];
+            }
+            $out .= Yii::app()->controller->widget('zii.widgets.grid.CGridView', [
+                'dataProvider' => new CArrayDataProvider($rows),
+                'columns' => [
+                    'question',
+                    'answer'
+                ]
+                
+            ], true);
+            $out .= CHtml::link("Back to list", $this->api->createUrl('survey/index', ['sid' => $surveyId, 'token' => $response['token'], 'lang' => 'en', 'newtest' => 'Y']));
+            $out .= '</body></html>';
+            Yii::app()->getClientScript()->render($out);
+            echo $out;
+        }
+        public function newDirectRequest() {
+            if ($this->event->get('target') == __CLASS__) {
+                $request = $this->event->get('request');
+                $surveyId = $request->getParam('surveyId');
+                $responseId = $request->getParam('responseId');
+                $token = $request->getParam('token');
+                switch($this->event->get("function")) {
+                    case 'delete':
+                        $response = Response::model($surveyId)->findByAttributes([
+                            'id' => $responseId,
+                            'token' => $token
+                        ]);
+                        if (isset($response) && $response->delete()) {
+                            echo "Deleted.";
+                        } elseif (!isset($response)) {
+                            echo "Not found.";
+                        } else {
+                            echo "Delete failed.";
+                        }
+                        break;
+                    case 'read':
+                        $response = $this->api->getResponse($surveyId, $responseId);
+                        if (isset($response)) {
+                            $this->viewResponse($response, $surveyId);
+                        }
+                        break;
+                    default:
+                        echo "Unknown action.";
+                }
+            }
         }
 
         public function beforeLoadResponse()
@@ -90,7 +145,6 @@
                             }
                         }
                     }
-                    return;
                 }
             }
         }
@@ -136,26 +190,91 @@
             {
                 $params['newtest'] = $newtest;
             }
-            $result = [];
+//            $result = [];
             foreach ($responses as $response)
             {
                 $result[] = [
-                    'data' => $response->attributes,
-                    'url' => $this->api->createUrl('survey/index', array_merge($params, [
-                        'ResponsePicker' => $response->id
-                    ]))
+                    'data' => $this->api->getResponse($response->surveyId, $response->id),
+                    'urls' => [
+                        'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
+                        'read' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'read', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
+                        
+                        'update' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id])),
+                        
+                    ],
                 ];
             }
             $result[] = [
                 'id' => 'new',
                 'url' => $this->api->createUrl('survey/index', $params)
             ];
+//            $this->renderJson($result);
+            $this->renderHtml($result);
+        }
+
+        protected function renderJson($result) {
             header('Content-Type: application/json');
             ob_end_clean();
             echo json_encode($result, JSON_PRETTY_PRINT);
             die();
         }
+        
+        protected function renderHtml($result) {
+            $new = array_pop($result);
+            $columns = [];
+            foreach($result as $resultDetails) {
+                foreach($resultDetails['data'] as $key => $value) {
+                    $columns[$key] = true;
+                }
+            }
+            $gridColumns['actions'] = [
+                'class' => 'CButtonColumn',
+                'template' => '{view}{update}{delete}',
+                'buttons' => [
+                    'view' => [
+                        'url' => function($data) {
+                            return $data['urls']['read'];
+                        }
+                    ],
+                    'update' => [
+                        'url' => function($data) {
+                            return $data['urls']['open'];
+                        }
+                    ],
+                    'delete' => [
+                        'url' => function($data) {
+                            return $data['urls']['delete'];
+                        }
+                    ]
+                ]
+            ];
+            $gridColumns['id'] = [
+                'name' => 'data.id',
+                'header' => "Response id"
+            ];
+            $gridColumns['submitdate'] = [
+                'name' => 'data.submitdate',
+                'header' => "Submit Date"
+            ];
+            foreach ($columns as $column => $dummy) {
+                if (substr($column, 0, 4) == 'DISP') {
+                    $gridColumns[$column] = [
+                        'name' => "data.$column",
+                        'header' => ucfirst($column)
 
+                    ];
+                }
+            }
+            echo '<html><title></title><body>';
+            Yii::app()->controller->widget('zii.widgets.grid.CGridView', [
+                'dataProvider' => new CArrayDataProvider($result),
+                'columns' => $gridColumns
+                
+            ]);
+            echo CHtml::link("Create new response", $new['url']);
+            die('</body></html>');
+            
+        }
         public function newSurveySettings()
         {
             foreach ($this->event->get('settings') as $name => $value)
