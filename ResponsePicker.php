@@ -65,6 +65,8 @@
                         $response = $this->api->getResponse($surveyId, $responseId);
                         if (isset($response)) {
                             $this->viewResponse($response, $surveyId);
+                        } else {
+                            throw new \CHttpException(404, "Response not found.");
                         }
                         break;
                     default:
@@ -238,7 +240,7 @@
                     ],
                     'update' => [
                         'url' => function($data) {
-                            return $data['urls']['open'];
+                            return $data['urls']['update'];
                         }
                     ],
                     'delete' => [
