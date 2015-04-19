@@ -203,10 +203,10 @@
             foreach ($responses as $response)
             {
                 $result[] = [
-                    'data' => $this->api->getResponse($response->surveyId, $response->id),
+                    'data' => $this->api->getResponse($sid, $response->id),
                     'urls' => [
-                        'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
-                        'read' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'read', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
+                        'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $sid, 'responseId' => $response->id, 'token' => $response->token]),
+                        'read' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'read', 'surveyId' => $sid, 'responseId' => $response->id, 'token' => $response->token]),
                         
                         'update' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id])),
                         
