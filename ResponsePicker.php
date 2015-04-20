@@ -111,9 +111,11 @@
                         {
                             if ($response->id == $choice)
                             {
-                                $response->id = null;
-                                $response->isNewRecord = true;
-                                $response->save();
+                                if ($request->getParam('RPcopy', 0) == 1) {
+                                    $response->id = null;
+                                    $response->isNewRecord = true;
+                                    $response->save();
+                                }
                                 $this->event->set('response', $response);
                                 break;
                             }
@@ -207,8 +209,8 @@
                     'urls' => [
                         'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $sid, 'responseId' => $response->id, 'token' => $response->token]),
                         'read' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'read', 'surveyId' => $sid, 'responseId' => $response->id, 'token' => $response->token]),
-                        
-                        'update' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id])),
+                        'edit' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id, 'RPcopy' => 0])),
+                        'update' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id, 'RPcopy' => 1])),
                         
                     ],
                 ];
