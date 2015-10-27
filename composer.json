@@ -8,6 +8,6 @@
         }
     ],
     "require": {
-        "sam-it/yii1-datatables": "dev-master"
+        "sam-it/yii1-datatables": "^1.0.0"
     }
 }
