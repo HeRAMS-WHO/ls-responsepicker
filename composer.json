@@ -1,0 +1,13 @@
+{
+    "name": "sam-it/ls2-responsepicker",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sam",
+            "email": "sam@mousa.nl"
+        }
+    ],
+    "require": {
+        "sam-it/yii1-datatables": "dev-master"
+    }
+}
