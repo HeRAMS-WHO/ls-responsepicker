@@ -302,7 +302,7 @@
 //            ];
             $configuredColumns = explode("\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
-                if (strpos(':', $column) === false) {
+                if (strpos($column, ':') === false) {
                     $column .= ':none';
                 }
                 list($name, $filter) = explode(':', $column, 2);
@@ -323,13 +323,16 @@
                 $gridColumns[$name] = [
                     'name' => "data.$name",
                     'header' => $question->question,
-                    'filter'=> $filter == 'none' ? false: $filter,
+                    'filter'=> ($filter == 'none') ? false : $filter,
                 ];
-
                 if (isset($answers) && !empty($answers)) {
                     $gridColumns[$name]['value'] = function($row) use ($answers, $name)
                     {
-                        return $answers[$row['data'][$name]]->answer;
+                        if (isset($answers[$row['data'][$name]])) {
+                            return $answers[$row['data'][$name]]->answer;
+                        } else {
+                            return "No text found for: $name";
+                        }
                     };
 
                 }
