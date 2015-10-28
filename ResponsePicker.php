@@ -300,7 +300,7 @@
 //                    'width' => '200px'
 //                ]
 //            ];
-            $configuredColumns = explode("\n", $this->get('columns', 'Survey', $sid, ""));
+            $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 if (strpos($column, ':') === false) {
                     $column .= ':none';
@@ -356,15 +356,24 @@
             $output = '<html><title></title><body style="padding: 20px;">';
             $header = $this->get('newheader', 'Survey', $sid, "New response");
 
-            $output .= \CHtml::link($header, $new['url'], ['class' => 'btn']);
+            header('Content-Type: text/html; charset=utf-8');
+            
             $output .= \CHtml::link($header, $new['url'], ['class' => 'btn']);
             \Yii::import('zii.widgets.grid.CGridView');
             \Yii::app()->params['bower-asset'] = \Yii::app()->assetManager->publish(__DIR__ . '/vendor/bower-asset');
-            $cs->registerCss('select', 'select { width: 100%; } input[type=text] { height: 30px;}');
+            $cs->registerCss('select', implode("\n", [
+                'select { width: 100%; }',
+                'input[type=text] { height: 30px;}',
+                'label > select { width: auto; }',
+                '.datatable-view { padding-top: 16px;}',
+                '.dataTables_length { position: absolute; }'
+
+            ]));
             $output .=  Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
                 'dataProvider' => new CArrayDataProvider($result, [
                     'keyField' => false
                 ]),
+                'pageSizeOptions' => [-1, 10, 25],
                 'filter' => true,
                 'columns' => $gridColumns
                 
