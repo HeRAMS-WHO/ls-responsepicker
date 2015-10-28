@@ -292,14 +292,25 @@
                     'width' => '200px'
                 ]
             ];
-//            $gridColumns['series'] = [
-//                'name' => 'uoid',
-//                'header' => "Series",
-//                'filter'=> 'text',
-//                'htmlOptions' => [
-//                    'width' => '200px'
-//                ]
-//            ];
+            $series = [];
+            foreach($result as $row) {
+                $id = $row['data']['UOID'];
+                if (!isset($series[$id])) {
+                    $series[$id] = $row['data']['submitdate'];
+                } else {
+                    $series[$id] = max($series[$id], $row['data']['submitdate']);
+                }
+            }
+
+            foreach($result as &$row) {
+                $id = $row['data']['UOID'];
+                $row['final'] = ($series[$id] === $row['data']['submitdate']) ? "True" : "False";
+            }
+            $gridColumns['final'] = [
+                'name' => 'final',
+                'header' => 'Last',
+                'filter' => 'select'
+            ];
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 if (strpos($column, ':') === false) {
@@ -340,6 +351,8 @@
                 // Try to get question.
 
             }
+
+
             foreach ($columns as $column => $dummy) {
                 if (substr($column, 0, 4) == 'DISP') {
                     $gridColumns[$column] = [
@@ -357,7 +370,7 @@
             $header = $this->get('newheader', 'Survey', $sid, "New response");
 
             header('Content-Type: text/html; charset=utf-8');
-            
+
             $output .= \CHtml::link($header, $new['url'], ['class' => 'btn']);
             \Yii::import('zii.widgets.grid.CGridView');
             \Yii::app()->params['bower-asset'] = \Yii::app()->assetManager->publish(__DIR__ . '/vendor/bower-asset');
@@ -369,6 +382,7 @@
                 '.dataTables_length { position: absolute; }'
 
             ]));
+
             $output .=  Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
                 'dataProvider' => new CArrayDataProvider($result, [
                     'keyField' => false
