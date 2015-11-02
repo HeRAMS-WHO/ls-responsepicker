@@ -41,23 +41,22 @@
         }
         public function newDirectRequest() {
             if ($this->event->get('target') == __CLASS__) {
+                /** @var CHttpRequest $request */
                 $request = $this->event->get('request');
                 $surveyId = $request->getParam('surveyId');
                 $responseId = $request->getParam('responseId');
                 $token = $request->getParam('token');
                 switch($this->event->get("function")) {
                     case 'delete':
+                        /** @var \Response $response */
                         $response = Response::model($surveyId)->findByAttributes([
                             'id' => $responseId,
                             'token' => $token
                         ]);
-                        if (isset($response) && $response->delete()) {
-                            echo "Deleted.";
-                        } elseif (!isset($response)) {
-                            echo "Not found.";
-                        } else {
-                            echo "Delete failed.";
+                        if (isset($response)) {
+                            $response->delete();
                         }
+                        $request->redirect($request->urlReferrer);
                         break;
                     case 'read':
                         $response = $this->api->getResponse($surveyId, $responseId);
@@ -67,12 +66,51 @@
                             throw new \CHttpException(404, "Response not found.");
                         }
                         break;
+                    case 'copy':
+                        $this->redirectToCopy($surveyId, $responseId);
+                        break;
                     default:
                         echo "Unknown action.";
                 }
             }
         }
 
+
+        /**
+         * Create a copy of the given response and direct the user to that response.
+         * @param $surveyId
+         * @param $responseId
+         */
+        protected function redirectToCopy($surveyId, $responseId)
+        {
+            if (null === $response = \Response::model($surveyId)->findByPk($responseId)) {
+                throw new \CHttpException(404, "Response not found.");
+            }
+
+//            echo CHtml::openTag('div', [
+//                'style' => 'display: inline-block; width: 30%'
+//            ]) . '<pre>';
+//
+//            var_dump($response->attributes);
+//            echo '</pre></div>';
+            $response->id = null;
+            $response->isNewRecord = true;
+            $response->submitdate = null;
+            $response->save();
+//            echo CHtml::openTag('div', [
+//                    'style' => 'display: inline-block; width: 30%'
+//                ]) . '<pre>';
+//
+//            var_dump($response->attributes);
+//            echo '</pre></div>';
+//            die();
+            $this->api->getRequest()->redirect($this->api->createUrl('survey/index', [
+                'ResponsePicker' => $response->id,
+                'sid' => $surveyId,
+                'token' => $response->token
+            ]));
+
+        }
         public function beforeLoadResponse()
         {
             $surveyId = $this->event->get('surveyId');
@@ -90,21 +128,12 @@
             if ($request->requestType == 'GET')
             {
                 $choice = $request->getParam('ResponsePicker');
-                if (isset($choice))
-                {
-                    if ($choice == 'new')
-                    {
+                if (isset($choice)) {
+                    if ($choice == 'new') {
                         $this->event->set('response', false);
-                    }
-                    else
-                    {
-                        foreach ($responses as $response)
-                        {
-                            if ($response->id == $choice)
-                            {
-                                $response->id = null;
-                                $response->isNewRecord = true;
-                                $response->save();
+                    } else {
+                        foreach ($responses as $response) {
+                            if ($response->id == $choice) {
                                 $this->event->set('response', $response);
                                 break;
                             }
@@ -116,9 +145,7 @@
                      * in the next request (which is a post)
                      */
                     $_SESSION['ResponsePicker'] = isset($response) ? $response->id : $choice;
-                }
-                else
-                {
+                } else {
                     $this->renderOptions($request, $responses);
                 }
             }
@@ -212,8 +239,8 @@
                     'urls' => [
                         'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
                         'read' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'read', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
-                        
                         'update' => $this->api->createUrl('survey/index', array_merge($params, ['ResponsePicker' => $response->id])),
+                        'copy' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'copy', 'surveyId' => $response->surveyId, 'responseId' => $response->id]),
                         
                     ],
                 ];
@@ -247,13 +274,16 @@
                 'header' => 'Actions',
                 'htmlOptions' => [
                     'width' => '100px',
-                    'style' => 'word-spacing: 2em;'
+//                    'style' => 'word-spacing: 2em;'
                 ],
-                'class' => 'CButtonColumn',
-                'template' => '{view}{update}{delete}',
+                'class' => \CButtonColumn::class,
+                'template' => '{view} {update} {repeat} {delete}',
                 'buttons' => [
                     'view' => [
                         'label' => '<i class="icon-eye-open"></i>',
+                        'options' => [
+                            'title' => 'View data'
+                        ],
                         'imageUrl' => false,
                         'url' => function($data) {
                             return $data['urls']['read'];
@@ -262,13 +292,30 @@
                     'update' => [
                         'label' => '<i class="icon-pencil"></i>',
                         'imageUrl' => false,
+                        'options' => [
+                            'title' => 'Update data'
+                        ],
                         'url' => function($data) {
                             return $data['urls']['update'];
+                        }
+                    ],
+                    'repeat' => [
+                        'label' => '<i class="icon-plus-sign"></i>',
+                        'imageUrl' => false,
+                        'options' => [
+                            'title' => 'Create new response based on this one'
+                        ],
+                        'url' => function($data) {
+                            return $data['urls']['copy'];
                         }
                     ],
                     'delete' => [
                         'label' => '<i class="icon-trash"></i>',
                         'imageUrl' => false,
+                        'options' => [
+                            'title' => 'Delete data'
+                        ],
+
                         'url' => function($data) {
                             return $data['urls']['delete'];
                         }
@@ -296,15 +343,15 @@
             foreach($result as $row) {
                 $id = $row['data']['UOID'];
                 if (!isset($series[$id])) {
-                    $series[$id] = $row['data']['submitdate'];
+                    $series[$id] = $row['data']['id'];
                 } else {
-                    $series[$id] = max($series[$id], $row['data']['submitdate']);
+                    $series[$id] = max($series[$id], $row['data']['id']);
                 }
             }
 
             foreach($result as &$row) {
                 $id = $row['data']['UOID'];
-                $row['final'] = ($series[$id] === $row['data']['submitdate']) ? "True" : "False";
+                $row['final'] = ($series[$id] === $row['data']['id']) ? "True" : "False";
             }
             $gridColumns['final'] = [
                 'name' => 'final',
