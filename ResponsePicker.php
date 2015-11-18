@@ -290,61 +290,66 @@
                 }
             }
 
-            $gridColumns['actions'] = [
-                'header' => 'Actions',
-                'htmlOptions' => [
-                    'width' => '100px',
-                ],
-                'class' => \CButtonColumn::class,
-                'template' => '{view} {update} {repeat} {delete}',
-                'buttons' => [
-                    'view' => [
-                        'visible' => $this->get('view', 'Survey', $event->get('survey'), 1),
-                        'label' => '<i class="icon-eye-open"></i>',
-                        'options' => [
-                            'title' => 'View data'
-                        ],
-                        'imageUrl' => false,
-                        'url' => function($data) {
-                            return $data['urls']['read'];
-                        }
-                    ],
-                    'update' => [
-                        'visible' => $this->get('update', 'Survey', $event->get('survey'), 1),
-                        'label' => '<i class="icon-pencil"></i>',
-                        'imageUrl' => false,
-                        'options' => [
-                            'title' => 'Update data'
-                        ],
-                        'url' => function($data) {
-                            return $data['urls']['update'];
-                        }
-                    ],
-                    'repeat' => [
-                        'visible' => $this->get('repeat', 'Survey', $event->get('survey'), 1),
-                        'label' => '<i class="icon-plus-sign"></i>',
-                        'imageUrl' => false,
-                        'options' => [
-                            'title' => 'Create new response based on this one'
-                        ],
-                        'url' => function($data) {
-                            return $data['urls']['copy'];
-                        }
-                    ],
-                    'delete' => [
-                        'visible' => $this->get('delete', 'Survey', $event->get('survey'), 1),
-                        'label' => '<i class="icon-trash"></i>',
-                        'imageUrl' => false,
-                        'options' => [
-                            'title' => 'Delete data'
-                        ],
+            $template = [];
+            foreach(['view', 'update', 'repeat', 'delete'] as $action) {
+                if ($this->get($action, 'Survey', $event->get('survey'), 1)) {
+                    $template[] = '{' . $action . '}';
+                }
 
-                        'url' => function($data) {
-                            return $data['urls']['delete'];
-                        }
+            }
+            if (!empty($template)) {
+                $gridColumns['actions'] = [
+                    'header' => 'Actions',
+                    'htmlOptions' => [
+                        'width' => '100px',
+                    ],
+                    'class' => \CButtonColumn::class,
+                    'template' => implode(' ', $template),
+                    'buttons' => [
+                        'view' => [
+                            'label' => '<i class="icon-eye-open"></i>',
+                            'options' => [
+                                'title' => 'View data'
+                            ],
+                            'imageUrl' => false,
+                            'url' => function ($data) {
+                                return $data['urls']['read'];
+                            }
+                        ],
+                        'update' => [
+                            'label' => '<i class="icon-pencil"></i>',
+                            'imageUrl' => false,
+                            'options' => [
+                                'title' => 'Update data'
+                            ],
+                            'url' => function ($data) {
+                                return $data['urls']['update'];
+                            }
+                        ],
+                        'repeat' => [
+                            'label' => '<i class="icon-plus-sign"></i>',
+                            'imageUrl' => false,
+                            'options' => [
+                                'title' => 'Create new response based on this one'
+                            ],
+                            'url' => function ($data) {
+                                return $data['urls']['copy'];
+                            }
+                        ],
+                        'delete' => [
+                            'label' => '<i class="icon-trash"></i>',
+                            'imageUrl' => false,
+                            'options' => [
+                                'title' => 'Delete data'
+                            ],
+
+                            'url' => function ($data) {
+                                return $data['urls']['delete'];
+                            }
+                        ]
                     ]
-                ]
-            ];
+                ];
+            }
             $gridColumns['id'] = [
                 'name' => 'data.id',
                 'header' => "Response id",
