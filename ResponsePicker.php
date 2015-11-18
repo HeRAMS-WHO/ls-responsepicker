@@ -194,17 +194,17 @@
                     ],
                     'repeat' => [
                         'type' => 'boolean',
-                        'label' => 'Enable update button: ',
+                        'label' => 'Enable repeat button: ',
                         'current' => $this->get('repeat', 'Survey', $event->get('survey'), 1)
                     ],
                     'view' => [
                         'type' => 'boolean',
-                        'label' => 'Enable update button: ',
+                        'label' => 'Enable view button: ',
                         'current' => $this->get('view', 'Survey', $event->get('survey'), 1)
                     ],
                     'delete' => [
                         'type' => 'boolean',
-                        'label' => 'Enable update button: ',
+                        'label' => 'Enable delete button: ',
                         'current' => $this->get('delete', 'Survey', $event->get('survey'), 1)
                     ],
                     'columns' => [
