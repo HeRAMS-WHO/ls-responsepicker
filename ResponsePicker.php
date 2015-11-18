@@ -281,7 +281,6 @@
 
 
         protected function renderHtml($result, $sid) {
-            $event = $this->event;
             $new = array_pop($result);
             $columns = [];
             if (isset($result[0]['data'])) {
@@ -292,7 +291,7 @@
 
             $template = [];
             foreach(['view', 'update', 'repeat', 'delete'] as $action) {
-                if ($this->get($action, 'Survey', $event->get('survey'), 1)) {
+                if ($this->get($action, 'Survey', $sid, 1)) {
                     $template[] = '{' . $action . '}';
                 }
 
