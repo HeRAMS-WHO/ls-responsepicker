@@ -370,33 +370,29 @@
                 ]);
                 if (isset($question)) {
                     $answers = [];
-                    foreach(Answer::model()->findAllByAttributes([
+                    foreach (Answer::model()->findAllByAttributes([
                         'qid' => $question->qid,
                     ]) as $answer) {
                         $answers[$answer->code] = $answer;
                     }
 
-//                var_dump($answers); die();
-                }
-                $gridColumns[$name] = [
-                    'name' => "data.$name",
-                    'header' => $question->question,
-                    'filter'=> ($filter == 'none') ? false : $filter,
-                ];
-                if (isset($answers) && !empty($answers)) {
-                    $gridColumns[$name]['value'] = function($row) use ($answers, $name)
-                    {
-                        if (isset($answers[$row['data'][$name]])) {
-                            return $answers[$row['data'][$name]]->answer;
-                        } else {
-                            return "No text found for: $name";
-                        }
-                    };
+                    $gridColumns[$name] = [
+                        'name' => "data.$name",
+                        'header' => $question->question,
+                        'filter' => ($filter == 'none') ? false : $filter,
+                    ];
+                    if (isset($answers) && !empty($answers)) {
+                        $gridColumns[$name]['value'] = function ($row) use ($answers, $name) {
+                            if (isset($answers[$row['data'][$name]])) {
+                                return $answers[$row['data'][$name]]->answer;
+                            } else {
+                                return "No text found for: $name";
+                            }
+                        };
+
+                    }
 
                 }
-
-                // Try to get question.
-
             }
 
 
