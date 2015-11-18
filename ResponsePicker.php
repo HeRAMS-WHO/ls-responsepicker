@@ -263,18 +263,16 @@
         protected function renderHtml($result, $sid) {
             $new = array_pop($result);
             $columns = [];
-//            echo '<pre>';
-//            var_dump($result[0]); die();
-            foreach($result as $resultDetails) {
-                foreach($resultDetails['data'] as $key => $value) {
+            if (isset($result[0]['data'])) {
+                foreach($result[0]['data'] as $key => $value) {
                     $columns[$key] = true;
                 }
             }
+
             $gridColumns['actions'] = [
                 'header' => 'Actions',
                 'htmlOptions' => [
                     'width' => '100px',
-//                    'style' => 'word-spacing: 2em;'
                 ],
                 'class' => \CButtonColumn::class,
                 'template' => '{view} {update} {repeat} {delete}',
@@ -409,12 +407,14 @@
             $cs = Yii::app()->clientScript;
             $cs->reset();
             \Yii::app()->bootstrap;
-            $output = '<html><title></title><body style="padding: 20px;">';
-            $header = $this->get('newheader', 'Survey', $sid, "New response");
-
             header('Content-Type: text/html; charset=utf-8');
 
-            $output .= \CHtml::link($header, $new['url'], ['class' => 'btn']);
+            echo '<html><title></title><body style="padding: 20px;">';
+            $header = $this->get('newheader', 'Survey', $sid, "New response");
+
+
+
+            echo \CHtml::link($header, $new['url'], ['class' => 'btn']);
             \Yii::import('zii.widgets.grid.CGridView');
             \Yii::app()->params['bower-asset'] = \Yii::app()->assetManager->publish(__DIR__ . '/vendor/bower-asset');
             $cs->registerCss('select', implode("\n", [
@@ -426,7 +426,7 @@
 
             ]));
 
-            $output .=  Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
+            echo Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
                 'dataProvider' => new CArrayDataProvider($result, [
                     'keyField' => false
                 ]),
@@ -435,9 +435,8 @@
                 'columns' => $gridColumns
                 
             ], true);
-            $output .= '</body></html>';
-            die($output);
-            
+            echo '</body></html>';
+            die();
         }
         public function newSurveySettings()
         {
