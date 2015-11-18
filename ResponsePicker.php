@@ -186,7 +186,27 @@
                         'type' => 'boolean',
                         'label' => 'Use response picker this survey: ',
                         'current' => $this->get('enabled', 'Survey', $event->get('survey'), 0)
-                   ],
+                    ],
+                    'update' => [
+                        'type' => 'boolean',
+                        'label' => 'Enable update button: ',
+                        'current' => $this->get('update', 'Survey', $event->get('survey'), 1)
+                    ],
+                    'repeat' => [
+                        'type' => 'boolean',
+                        'label' => 'Enable update button: ',
+                        'current' => $this->get('repeat', 'Survey', $event->get('survey'), 1)
+                    ],
+                    'view' => [
+                        'type' => 'boolean',
+                        'label' => 'Enable update button: ',
+                        'current' => $this->get('view', 'Survey', $event->get('survey'), 1)
+                    ],
+                    'delete' => [
+                        'type' => 'boolean',
+                        'label' => 'Enable update button: ',
+                        'current' => $this->get('delete', 'Survey', $event->get('survey'), 1)
+                    ],
                     'columns' => [
                         'type' => 'text',
                         'label' => 'Show these columns (One question code per line):',
@@ -261,6 +281,7 @@
 
 
         protected function renderHtml($result, $sid) {
+            $event = $this->event;
             $new = array_pop($result);
             $columns = [];
             if (isset($result[0]['data'])) {
@@ -278,6 +299,7 @@
                 'template' => '{view} {update} {repeat} {delete}',
                 'buttons' => [
                     'view' => [
+                        'visible' => $this->get('view', 'Survey', $event->get('survey'), 1),
                         'label' => '<i class="icon-eye-open"></i>',
                         'options' => [
                             'title' => 'View data'
@@ -288,6 +310,7 @@
                         }
                     ],
                     'update' => [
+                        'visible' => $this->get('update', 'Survey', $event->get('survey'), 1),
                         'label' => '<i class="icon-pencil"></i>',
                         'imageUrl' => false,
                         'options' => [
@@ -298,6 +321,7 @@
                         }
                     ],
                     'repeat' => [
+                        'visible' => $this->get('repeat', 'Survey', $event->get('survey'), 1),
                         'label' => '<i class="icon-plus-sign"></i>',
                         'imageUrl' => false,
                         'options' => [
@@ -308,6 +332,7 @@
                         }
                     ],
                     'delete' => [
+                        'visible' => $this->get('delete', 'Survey', $event->get('survey'), 1),
                         'label' => '<i class="icon-trash"></i>',
                         'imageUrl' => false,
                         'options' => [
