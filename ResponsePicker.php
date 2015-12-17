@@ -87,23 +87,12 @@
                 throw new \CHttpException(404, "Response not found.");
             }
 
-//            echo CHtml::openTag('div', [
-//                'style' => 'display: inline-block; width: 30%'
-//            ]) . '<pre>';
-//
-//            var_dump($response->attributes);
-//            echo '</pre></div>';
             $response->id = null;
             $response->isNewRecord = true;
             $response->submitdate = null;
+            $response->lastpage = 1;
             $response->save();
-//            echo CHtml::openTag('div', [
-//                    'style' => 'display: inline-block; width: 30%'
-//                ]) . '<pre>';
-//
-//            var_dump($response->attributes);
-//            echo '</pre></div>';
-//            die();
+
             $this->api->getRequest()->redirect($this->api->createUrl('survey/index', [
                 'ResponsePicker' => $response->id,
                 'sid' => $surveyId,
