@@ -372,7 +372,7 @@
             $gridColumns['final'] = [
                 'name' => 'final',
                 'header' => 'Last',
-                'filter' => 'select'
+                'filter' => 'select-strict'
             ];
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
@@ -417,7 +417,7 @@
                     $gridColumns[$column] = [
                         'name' => "data.$column",
                         'header' => ucfirst($column),
-                        'filter'=> 'select'
+                        'filter'=> 'select-strict'
                     ];
                 }
             }
