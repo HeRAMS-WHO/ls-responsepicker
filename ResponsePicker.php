@@ -196,6 +196,12 @@
                         'label' => 'Enable delete button: ',
                         'current' => $this->get('delete', 'Survey', $event->get('survey'), 1)
                     ],
+                    'create' => [
+                        'type' => 'boolean',
+                        'label' => 'Enable create button: ',
+                        'current' => $this->get('create', 'Survey', $event->get('survey'), 1)
+                    ],
+
                     'columns' => [
                         'type' => 'text',
                         'label' => 'Show these columns (One question code per line):',
@@ -428,11 +434,10 @@
             header('Content-Type: text/html; charset=utf-8');
 
             echo '<html><title></title><body style="padding: 20px;">';
-            $header = $this->get('newheader', 'Survey', $sid, "New response");
-
-
-
-            echo \CHtml::link($header, $new['url'], ['class' => 'btn']);
+            if ($this->get('create', 'Survey', $this->event->get('survey'), 1)) {
+                echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
+                    ['class' => 'btn']);
+            }
             \Yii::import('zii.widgets.grid.CGridView');
             \Yii::app()->params['bower-asset'] = \Yii::app()->assetManager->publish(__DIR__ . '/vendor/bower-asset');
             $cs->registerCss('select', implode("\n", [
