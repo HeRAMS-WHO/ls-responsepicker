@@ -434,7 +434,7 @@
             header('Content-Type: text/html; charset=utf-8');
 
             echo '<html><title></title><body style="padding: 20px;">';
-            if ($this->get('create', 'Survey', $this->event->get('survey'), 1)) {
+            if ($this->get('create', 'Survey', $sid, 1)) {
                 echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
                     ['class' => 'btn']);
             }
