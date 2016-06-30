@@ -188,7 +188,7 @@
                     ],
                     'view' => [
                         'type' => 'boolean',
-                        'label' => 'Enable view button: ',
+                        'label' => 'Enable view butfton: ',
                         'current' => $this->get('view', 'Survey', $event->get('survey'), 1)
                     ],
                     'delete' => [
@@ -303,7 +303,7 @@
                         'view' => [
                             'label' => '<i class="icon-eye-open"></i>',
                             'options' => [
-                                'title' => 'View data'
+                                'title' => 'View response'
                             ],
                             'imageUrl' => false,
                             'url' => function ($data) {
@@ -314,7 +314,7 @@
                             'label' => '<i class="icon-pencil"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Update data'
+                                'title' => 'Edit response'
                             ],
                             'url' => function ($data) {
                                 return $data['urls']['update'];
@@ -324,7 +324,7 @@
                             'label' => '<i class="icon-plus-sign"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Create new response based on this one'
+                                'title' => 'Update response'
                             ],
                             'url' => function ($data) {
                                 return $data['urls']['copy'];
@@ -449,6 +449,7 @@
 
             ]));
 
+            
             echo Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
                 'dataProvider' => new CArrayDataProvider($result, [
                     'keyField' => false
