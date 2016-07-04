@@ -45,7 +45,7 @@
             $oFormattingOptions->selectedColumns=$aFields;
             $oFormattingOptions->responseCompletionState= 'all';
             $oFormattingOptions->headingFormat = 'full';
-            $oFormattingOptions->answerFormat = 'full';
+            $oFormattingOptions->answerFormat = 'long';
             $oFormattingOptions->output = 'file';
 
 
