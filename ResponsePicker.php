@@ -1,6 +1,5 @@
 <?php
     require_once(__DIR__ . '/vendor/autoload.php');
-
     class ResponsePicker extends \ls\pluginmanager\PluginBase
     {
 
@@ -20,22 +19,66 @@
             
             $this->subscribe('newDirectRequest');
         }
-        
-        protected function viewResponse($response, $surveyId) {
-            $out = '<html><title></title><body>';
-            $rows = [];
-            foreach ($response as $key => $value) {
-                $rows[] = [
-                    'question' => $key,
-                    'answer' => $value
-                ];
-            }
-            $out .= Yii::app()->controller->widget('zii.widgets.CDetailView', [
-                'data' => $response
 
-            ], true);
+        /**
+         * This function renders a response in a table.
+         * It uses LS internals which is not according to best practices.
+         * @param $response
+         * @param $surveyId
+         * @throws CException
+         * @throws Exception
+         */
+        protected function viewResponse($response, $surveyId)
+        {
+            $aFields = array_keys(createFieldMap($surveyId,'full',true,false,'en'));
+
+            App()->loadHelper('admin.exportresults');
+            App()->loadHelper('export');
+            \Yii::import('application.helpers.viewHelper');
+            App()->controller->__set('action', App()->controller->getAction());
+            $oExport = new \ExportSurveyResultsService();
+            $oFormattingOptions = new FormattingOptions();
+
+            $oFormattingOptions->responseMinRecord = $response['id'];
+            $oFormattingOptions->responseMaxRecord = $response['id'];
+
+            $oFormattingOptions->selectedColumns=$aFields;
+            $oFormattingOptions->responseCompletionState= 'all';
+            $oFormattingOptions->headingFormat = 'full';
+            $oFormattingOptions->answerFormat = 'full';
+            $oFormattingOptions->output = 'file';
+
+
+
+            $sTempFile = $oExport->exportSurvey($surveyId, 'en', 'json' ,$oFormattingOptions, '');
+            $data = array_values(json_decode(file_get_contents($sTempFile), true)['responses'][0])[0];
+
+            $out = '<html><title></title><body><table>';
+            foreach($data as $key => $value) {
+                $row = "";
+                if (!empty($value)) {
+                    $row .= "<tr>";
+                    if (preg_match('/^\{.*\}$/', $key)) {
+                        $row .= "<td style='width: 40%;'><span title='$key'>Computed</span></td>";
+                    } else {
+                        $row .= "<td style='width: 40%;'>$key</td>";
+                    }
+
+                    if (is_numeric($value)) {
+                        if (abs(intval($value) - floatval($value)) < 0.001) {
+                            $value = intval($value);
+                        } else {
+                            $value = floatval($value);
+                        }
+                    }
+
+                    $row .= "<td>$value</td></tr>";
+                }
+                $out .= $row;
+            }
+            $out .= "</table>";
             $out .= CHtml::link("Back to list", $this->api->createUrl('survey/index', ['sid' => $surveyId, 'token' => $response['token'], 'lang' => 'en', 'newtest' => 'Y']));
-            $out .= '</body></html>';
+            $out .= '</body><style>body { width: 1070px; margin-left: auto; margin-right: auto; } tr:nth-child(even) {background: #f1f1f1}</style></html>';
             Yii::app()->getClientScript()->render($out);
             echo $out;
         }
