@@ -149,14 +149,12 @@
             foreach($attributePrefixes as $prefix) {
                 foreach ($response->attributeNames() as $attributeName) {
                     // Test prefix match
-                    if (strncmp($prefix, $attributeName, count($prefix) !== 0)) {
-                        continue;
+                    if (strpos($attributeName, $prefix) === 0) {
+                        $response->{$attributeName} = null;
                     }
-                    $response->{$attributeName} = null;
                 }
             }
-            $response->save();
-
+            $response->save(false);
             $this->api->getRequest()->redirect($this->api->createUrl('survey/index', [
                 'ResponsePicker' => $response->id,
                 'sid' => $surveyId,
