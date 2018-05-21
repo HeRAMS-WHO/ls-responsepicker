@@ -4,183 +4,177 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "272e2e9139b4ab950ab78c12b09200e3",
+    "content-hash": "0da0963852f3930b6b02508fa235412b",
     "packages": [
         {
-            "name": "bower-asset/datatables",
-            "version": "1.10.9",
+            "name": "bower-asset/bootbox",
+            "version": "v4.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/DataTables/DataTables.git",
-                "reference": "b1bca78111d679b20cdee118292a1e4220f46b2a"
+                "url": "https://github.com/makeusabrew/bootbox.git",
+                "reference": "cb756203e250ed0ff2539359ff0ad1c3ffb8e8d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DataTables/DataTables/zipball/b1bca78111d679b20cdee118292a1e4220f46b2a",
-                "reference": "b1bca78111d679b20cdee118292a1e4220f46b2a",
-                "shasum": ""
+                "url": "https://api.github.com/repos/makeusabrew/bootbox/zipball/cb756203e250ed0ff2539359ff0ad1c3ffb8e8d3",
+                "reference": "cb756203e250ed0ff2539359ff0ad1c3ffb8e8d3",
+                "shasum": null
+            },
+            "require": {
+                "bower-asset/bootstrap": ">=3.0.0"
+            },
+            "type": "bower-asset"
+        },
+        {
+            "name": "bower-asset/bootstrap",
+            "version": "v4.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twbs/bootstrap.git",
+                "reference": "779ad9f174ea5ab7e755f6df0ec9e5912d67dd16"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twbs/bootstrap/zipball/779ad9f174ea5ab7e755f6df0ec9e5912d67dd16",
+                "reference": "779ad9f174ea5ab7e755f6df0ec9e5912d67dd16",
+                "shasum": null
+            },
+            "type": "bower-asset"
+        },
+        {
+            "name": "bower-asset/datatables",
+            "version": "1.10.16",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:DataTables/DataTables.git",
+                "reference": "75a665f64f02982c0f4666b15a25c4670e5e6b18"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DataTables/DataTables/zipball/75a665f64f02982c0f4666b15a25c4670e5e6b18",
+                "reference": "75a665f64f02982c0f4666b15a25c4670e5e6b18",
+                "shasum": null
             },
             "require": {
                 "bower-asset/jquery": ">=1.7.0"
             },
-            "type": "bower-asset-library",
-            "extra": {
-                "bower-asset-main": [
-                    "media/js/jquery.dataTables.js",
-                    "media/css/jquery.dataTables.css",
-                    "media/images/sort_asc.png",
-                    "media/images/sort_asc_disabled.png",
-                    "media/images/sort_both.png",
-                    "media/images/sort_desc.png",
-                    "media/images/sort_desc_disabled.png"
-                ],
-                "bower-asset-ignore": [
-                    "/.*",
-                    "examples",
-                    "media/unit_testing",
-                    "composer.json",
-                    "dataTables.jquery.json",
-                    "package.json"
-                ]
-            },
+            "type": "bower-asset",
             "license": [
                 "MIT"
-            ],
-            "keywords": [
-                "datatables",
-                "javascript",
-                "jquery",
-                "library",
-                "table"
             ]
         },
         {
             "name": "bower-asset/drmonty-datatables-plugins",
-            "version": "1.10.9",
+            "version": "1.10.16",
             "source": {
                 "type": "git",
-                "url": "https://github.com/drmonty/datatables-plugins.git",
-                "reference": "7754cfdeef135f7a1cf681f62c9b94d5f5e553c9"
+                "url": "git@github.com:drmonty/datatables-plugins.git",
+                "reference": "97ef502c3c9d0467e45d1c96bd57843755f0de07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/drmonty/datatables-plugins/zipball/7754cfdeef135f7a1cf681f62c9b94d5f5e553c9",
-                "reference": "7754cfdeef135f7a1cf681f62c9b94d5f5e553c9",
-                "shasum": ""
+                "url": "https://api.github.com/repos/drmonty/datatables-plugins/zipball/97ef502c3c9d0467e45d1c96bd57843755f0de07",
+                "reference": "97ef502c3c9d0467e45d1c96bd57843755f0de07",
+                "shasum": null
             },
             "require": {
                 "bower-asset/jquery": ">=1.7"
             },
-            "type": "bower-asset-library",
-            "extra": {
-                "bower-asset-main": "main.js",
-                "bower-asset-ignore": [
-                    "component.json",
-                    "package.json",
-                    "composer.json"
-                ]
-            },
-            "description": "Plug-ins for DataTables"
+            "type": "bower-asset"
         },
         {
             "name": "bower-asset/jquery",
-            "version": "2.1.4",
+            "version": "3.3.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/jquery/jquery.git",
-                "reference": "7751e69b615c6eca6f783a81e292a55725af6b85"
+                "url": "https://github.com/jquery/jquery-dist.git",
+                "reference": "9e8ec3d10fad04748176144f108d7355662ae75e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jquery/jquery/zipball/7751e69b615c6eca6f783a81e292a55725af6b85",
-                "reference": "7751e69b615c6eca6f783a81e292a55725af6b85",
-                "shasum": ""
+                "url": "https://api.github.com/repos/jquery/jquery-dist/zipball/9e8ec3d10fad04748176144f108d7355662ae75e",
+                "reference": "9e8ec3d10fad04748176144f108d7355662ae75e",
+                "shasum": null
             },
-            "require-dev": {
-                "bower-asset/qunit": "1.14.0",
-                "bower-asset/requirejs": "2.1.10",
-                "bower-asset/sinon": "1.8.1",
-                "bower-asset/sizzle": "2.1.1-patch2"
-            },
-            "type": "bower-asset-library",
-            "extra": {
-                "bower-asset-main": "dist/jquery.js",
-                "bower-asset-ignore": [
-                    "**/.*",
-                    "build",
-                    "dist/cdn",
-                    "speed",
-                    "test",
-                    "*.md",
-                    "AUTHORS.txt",
-                    "Gruntfile.js",
-                    "package.json"
-                ]
-            },
+            "type": "bower-asset",
             "license": [
                 "MIT"
-            ],
-            "keywords": [
-                "javascript",
-                "jquery",
-                "library"
             ]
         },
         {
+            "name": "bower-asset/jquery-color",
+            "version": "2.1.2",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:jquery/jquery-color.git",
+                "reference": "9e5e04c1c4ee66427fbe04cfce8155b76748ca64"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jquery/jquery-color/zipball/9e5e04c1c4ee66427fbe04cfce8155b76748ca64",
+                "reference": "9e5e04c1c4ee66427fbe04cfce8155b76748ca64",
+                "shasum": null
+            },
+            "type": "bower-asset"
+        },
+        {
             "name": "bower-asset/moment",
-            "version": "2.10.6",
+            "version": "2.22.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/moment/moment.git",
-                "reference": "f3fbef9d9875bbff340b527dbe3f1c447a942f69"
+                "reference": "c58511b94eba1000c1d66b23e9a9ff963ff1cc89"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/moment/moment/zipball/f3fbef9d9875bbff340b527dbe3f1c447a942f69",
-                "reference": "f3fbef9d9875bbff340b527dbe3f1c447a942f69",
-                "shasum": ""
+                "url": "https://api.github.com/repos/moment/moment/zipball/c58511b94eba1000c1d66b23e9a9ff963ff1cc89",
+                "reference": "c58511b94eba1000c1d66b23e9a9ff963ff1cc89",
+                "shasum": null
             },
-            "type": "bower-asset-library",
-            "extra": {
-                "bower-asset-main": "moment.js",
-                "bower-asset-ignore": [
-                    "**/.*",
-                    "benchmarks",
-                    "bower_components",
-                    "meteor",
-                    "node_modules",
-                    "scripts",
-                    "tasks",
-                    "test",
-                    "component.json",
-                    "composer.json",
-                    "CONTRIBUTING.md",
-                    "ender.js",
-                    "Gruntfile.js",
-                    "Moment.js.nuspec",
-                    "package.js",
-                    "package.json"
-                ]
-            }
+            "type": "bower-asset",
+            "license": [
+                "MIT"
+            ]
+        },
+        {
+            "name": "bower-asset/open-iconic",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:iconic/open-iconic.git",
+                "reference": "1d1e8885c5031874b32f4e480e371ce2b1c24144"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/iconic/open-iconic/zipball/1d1e8885c5031874b32f4e480e371ce2b1c24144",
+                "reference": "1d1e8885c5031874b32f4e480e371ce2b1c24144",
+                "shasum": null
+            },
+            "type": "bower-asset",
+            "license": [
+                "MIT",
+                "OFL-1.1"
+            ]
         },
         {
             "name": "sam-it/yii1-datatables",
-            "version": "v1.0.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SAM-IT/yii1-datatables.git",
-                "reference": "b4f741e1038b433a4635453a0a238f4a241a5ffb"
+                "reference": "504f153bede1331a143a1a5574507725f09578c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SAM-IT/yii1-datatables/zipball/b4f741e1038b433a4635453a0a238f4a241a5ffb",
-                "reference": "b4f741e1038b433a4635453a0a238f4a241a5ffb",
+                "url": "https://api.github.com/repos/SAM-IT/yii1-datatables/zipball/504f153bede1331a143a1a5574507725f09578c2",
+                "reference": "504f153bede1331a143a1a5574507725f09578c2",
                 "shasum": ""
             },
             "require": {
                 "bower-asset/datatables": "^1.10.0",
                 "bower-asset/drmonty-datatables-plugins": "^1.0",
-                "bower-asset/moment": "^2.0",
+                "bower-asset/jquery-color": "^2.1",
+                "bower-asset/moment": "^2.1",
                 "php": ">=5.4.0"
             },
             "type": "library",
@@ -200,13 +194,15 @@
                 }
             ],
             "description": "Yii widget wrapper for DataTables",
-            "time": "2015-10-27 15:49:31"
+            "time": "2016-07-26T11:38:23+00:00"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "sam-it/yii1-datatables": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

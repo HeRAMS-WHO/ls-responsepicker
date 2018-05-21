@@ -8,6 +8,14 @@
         }
     ],
     "require": {
-        "sam-it/yii1-datatables": "^1.0.0"
+        "sam-it/yii1-datatables": "dev-master",
+        "bower-asset/bootbox": "^4.4",
+        "bower-asset/open-iconic": "^1.1"
+    },
+    "repositories": [
+    {
+        "type": "composer",
+        "url": "https://asset-packagist.org"
     }
+]
 }

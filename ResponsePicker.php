@@ -134,6 +134,27 @@
             $response->isNewRecord = true;
             $response->submitdate = null;
             $response->lastpage = 1;
+            $skipColumns = explode("\r\n", $this->get('skipColumns', 'Survey', $surveyId, ""));
+            $questions = Question::model()->findAllByAttributes([
+                'sid' => $surveyId,
+                'parent_qid' => 0,
+                'title' => $skipColumns
+            ]);
+
+            $attributePrefixes = array_map(function(Question $question) {
+                return "{$question->sid}X{$question->gid}X{$question->qid}";
+            }, $questions);
+
+            /** @var Question $question */
+            foreach($attributePrefixes as $prefix) {
+                foreach ($response->attributeNames() as $attributeName) {
+                    // Test prefix match
+                    if (strncmp($prefix, $attributeName, count($prefix) !== 0)) {
+                        continue;
+                    }
+                    $response->{$attributeName} = null;
+                }
+            }
             $response->save();
 
             $this->api->getRequest()->redirect($this->api->createUrl('survey/index', [
@@ -216,7 +237,7 @@
                 'settings' => [
                     'enabled' => [
                         'type' => 'boolean',
-                        'label' => 'Use response picker this survey: ',
+                        'label' => 'Use ResponsePicker for this survey: ',
                         'current' => $this->get('enabled', 'Survey', $event->get('survey'), 0)
                     ],
                     'update' => [
@@ -244,17 +265,41 @@
                         'label' => 'Enable create button: ',
                         'current' => $this->get('create', 'Survey', $event->get('survey'), 1)
                     ],
-
                     'columns' => [
                         'type' => 'text',
                         'label' => 'Show these columns (One question code per line):',
+                        'hint' => 'Enable filtering by adding : and the type of filter (text,select)',
                         'current' => $this->get('columns', 'Survey', $event->get('survey'), "")
+                    ],
+                    'skipColumns' => [
+                        'type' => 'text',
+                        'label' => 'Skip these columns during the repeat action',
+                        'current' => $this->get('skipColumns', 'Survey', $event->get('survey'), "")
                     ],
                     'newheader' => [
                         'type' => 'string',
                         'label' => 'Header for new response button:',
                         'current' => $this->get('newheader', 'Survey', $event->get('survey'), "New response")
+                    ],
+                    'updateConfirmation' => [
+                        'type' => 'string',
+                        'label' => 'Update confirmation message',
+                        'current' => $this->get('updateConfirmation', 'Survey', $event->get('survey')),
+                        'help' => 'Leave empty for no confirmation'
+                    ],
+                    'repeatConfirmation' => [
+                        'type' => 'string',
+                        'label' => 'Default repeat confirmation message',
+                        'current' => $this->get('repeatConfirmation', 'Survey', $event->get('survey')),
+                        'help' => 'Leave empty for no confirmation'
+                    ],
+                    'deleteConfirmation' => [
+                        'type' => 'string',
+                        'label' => 'Default delete confirmation message',
+                        'current' => $this->get('deleteConfirmation', 'Survey', $event->get('survey')),
+                        'help' => 'Leave empty for no confirmation'
                     ]
+
 
 
                 ],
@@ -262,6 +307,12 @@
             $event->set("surveysettings.{$this->id}", $settings);
 
         }
+
+        /**
+         * Renders the table containing responses to available for the current token.
+         * @param \CHttpRequest $request
+         * @param $responses
+         */
         protected function renderOptions($request, $responses)
         {
             $sid = $request->getParam('sid');
@@ -287,12 +338,11 @@
             {
                 $params['newtest'] = $newtest;
             }
-//            $result = [];
+
+            $result = [];
             foreach ($responses as $response)
             {
-//                echo '<pre>'; var_dump(array_keys($response->attributes)); die();
                 $result[] = [
-//                    'series' => $response->uoid,
                     'data' => $this->api->getResponse($response->surveyId, $response->id),
                     'urls' => [
                         'delete' => $this->api->createUrl('plugins/direct', ['plugin' => __CLASS__, 'function' => 'delete', 'surveyId' => $response->surveyId, 'responseId' => $response->id, 'token' => $response->token]),
@@ -318,7 +368,19 @@
         }
 
 
-        protected function renderHtml($result, $sid) {
+        /**
+         * Render an array of responses as an HTML table.
+         * @param $result
+         * @param $sid
+         * @throws CException
+         */
+        protected function renderHtml($result, $sid)
+        {
+            Yii::app()->clientScript->reset();
+            /** @var CAssetManager $am */
+            $am = \Yii::app()->assetManager;
+            \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/vendor/bower-asset', false, -1);
+
             $new = array_pop($result);
             $columns = [];
             if (isset($result[0]['data'])) {
@@ -344,7 +406,7 @@
                     'template' => implode(' ', $template),
                     'buttons' => [
                         'view' => [
-                            'label' => '<i class="icon-eye-open"></i>',
+                            'label' => '<span class="oi oi-eye"></span>',
                             'options' => [
                                 'title' => 'View response'
                             ],
@@ -354,17 +416,18 @@
                             }
                         ],
                         'update' => [
-                            'label' => '<i class="icon-pencil"></i>',
+                            'label' => '<i class="oi oi-pencil"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Edit response'
+                                'title' => 'Edit response',
+                                'data-confirm' => $this->get('updateConfirmation', 'Survey', $sid)
                             ],
                             'url' => function ($data) {
                                 return $data['urls']['update'];
                             }
                         ],
                         'repeat' => [
-                            'label' => '<i class="icon-plus-sign"></i>',
+                            'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
                                 'title' => 'Update response'
@@ -374,7 +437,7 @@
                             }
                         ],
                         'delete' => [
-                            'label' => '<i class="icon-trash"></i>',
+                            'label' => '<i class="oi oi-trash"></i>',
                             'imageUrl' => false,
                             'options' => [
                                 'title' => 'Delete data'
@@ -418,6 +481,7 @@
                 $id = $row['data']['UOID'];
                 $row['final'] = ($series[$id] === $row['data']['id']) ? "True" : "False";
             }
+
             $gridColumns['final'] = [
                 'name' => 'final',
                 'header' => 'Last',
@@ -454,9 +518,7 @@
                                 return "No text found for: $name";
                             }
                         };
-
                     }
-
                 }
             }
 
@@ -470,50 +532,83 @@
                     ];
                 }
             }
-            /** @var \CClientScript $cs */
-            $cs = Yii::app()->clientScript;
-            $cs->reset();
-            \Yii::app()->bootstrap;
             header('Content-Type: text/html; charset=utf-8');
 
             echo '<html><title></title><body style="padding: 20px;">';
             if ($this->get('create', 'Survey', $sid, 1)) {
                 echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
-                    ['class' => 'btn']);
+                    ['class' => 'btn btn-primary']);
             }
             \Yii::import('zii.widgets.grid.CGridView');
-            \Yii::app()->params['bower-asset'] = \Yii::app()->assetManager->publish(__DIR__ . '/vendor/bower-asset');
-            $cs->registerCss('select', implode("\n", [
-                'select { width: 100%; }',
-                'input[type=text] { height: 30px;}',
-                'label > select { width: auto; }',
-                '.datatable-view { padding-top: 16px;}',
-                '.dataTables_length { position: absolute; }'
 
-            ]));
-
-            
             echo Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
                 'dataProvider' => new CArrayDataProvider($result, [
-                    'keyField' => false
+                    'pagination' => [
+                        'pageSize' => 10,
+                    ],
+                    'keyField' => false,
+                    'sort' => [
+                        'defaultOrder' => [
+                            'data.id' => CSort::SORT_DESC
+                        ]
+                    ],
                 ]),
+
+                'itemsCssClass' => 'table-bordered table table-striped dataTable',
                 'pageSizeOptions' => [-1, 10, 25],
                 'filter' => true,
                 'columns' => $gridColumns
                 
             ], true);
+            $this->registerClientScript(Yii::app()->clientScript);
             echo '</body></html>';
             die();
         }
+
+        /**
+         * Updates survey settings
+         */
         public function newSurveySettings()
         {
+            $surveyId = $this->event->get('survey');
             foreach ($this->event->get('settings') as $name => $value)
             {
-                if ($name != 'count')
-                {
-                    $this->set($name, $value, 'Survey', $this->event->get('survey'));
-                }
+                $this->set($name, $value, 'Survey', $surveyId);
             }
         }
+
+        protected function registerClientScript(\CClientScript $clientScript)
+        {
+            $bowerPath = \Yii::app()->params['bower-asset'];
+            // Bootstrap 4
+            $clientScript->registerScriptFile("$bowerPath/bootstrap/dist/js/bootstrap.min.js");
+            $clientScript->registerCssFile("$bowerPath/bootstrap/dist/css/bootstrap.min.css");
+            // Iconic
+            $clientScript->registerCssFile("$bowerPath/open-iconic/font/css/open-iconic-bootstrap.min.css");
+            // Bootbox
+            $clientScript->registerScriptFile("$bowerPath/bootbox/bootbox.js");
+
+            $clientScript->registerCss('select', implode("\n", [
+                '.datatable-view { padding-top: 16px;}',
+                'table { -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; }'
+            ]));
+            
+            $clientScript->registerScript('confirm', <<<JS
+                $(document).on('click', 'a[data-confirm]', function(e) {
+                    e.preventDefault();
+                    var url = $(this).attr('href');
+                    bootbox.confirm($(this).data('confirm'), function(result) {
+                        if (result) {
+                            window.location.href = url;
+                        }
+                    })
+                })
+
+JS
+            );
+            $clientScript->scriptMap["jquery.dataTables.min.css"] = false;
+            $clientScript->scriptMap["jquery.dataTables.css"] = false;
+            $clientScript->registerCssFile("$bowerPath/datatables/media/css/dataTables.bootstrap4.min.css");
+            $clientScript->registerScriptFile("$bowerPath/datatables/media/js/dataTables.bootstrap4.js", $clientScript::POS_END);
+        }
     }
-?>
