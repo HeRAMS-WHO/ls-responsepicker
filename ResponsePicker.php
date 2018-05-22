@@ -91,6 +91,9 @@
                 $token = $request->getParam('token');
                 switch($this->event->get("function")) {
                     case 'delete':
+                        if (!$request->isDeleteRequest) {
+                            throw new \CHttpException(504, "This endpoint only supports DELETE");
+                        }
                         /** @var \Response $response */
                         $response = Response::model($surveyId)->findByAttributes([
                             'id' => $responseId,
@@ -99,7 +102,8 @@
                         if (isset($response)) {
                             $response->delete();
                         }
-                        $request->redirect($request->urlReferrer);
+                        http_response_code(202);
+                        die();
                         break;
                     case 'read':
                         $response = $this->api->getResponse($surveyId, $responseId);
@@ -110,7 +114,10 @@
                         }
                         break;
                     case 'copy':
-                        $this->redirectToCopy($surveyId, $responseId);
+                        if (!$request->isPostRequest) {
+                            throw new \CHttpException(504, "This endpoint only supports POST");
+                        }
+                        $this->createCopy($surveyId, $responseId);
                         break;
                     default:
                         echo "Unknown action.";
@@ -124,7 +131,7 @@
          * @param $surveyId
          * @param $responseId
          */
-        protected function redirectToCopy($surveyId, $responseId)
+        protected function createCopy($surveyId, $responseId)
         {
             if (null === $response = \Response::model($surveyId)->findByPk($responseId)) {
                 throw new \CHttpException(404, "Response not found.");
@@ -155,12 +162,14 @@
                 }
             }
             $response->save(false);
-            $this->api->getRequest()->redirect($this->api->createUrl('survey/index', [
+            $location = $this->api->createUrl('survey/index', [
                 'ResponsePicker' => $response->id,
                 'sid' => $surveyId,
                 'token' => $response->token
-            ]));
-
+            ]);
+            header('Location :' . $location);
+            http_response_code(201);
+            die();
         }
         public function beforeLoadResponse()
         {
@@ -355,7 +364,7 @@
                 'id' => 'new',
                 'url' => $this->api->createUrl('survey/index', $params)
             ];
-            $this->renderHtml($result, $sid);
+            $this->renderHtml($result, $sid, $request);
         }
 
         protected function renderJson($result) {
@@ -372,7 +381,7 @@
          * @param $sid
          * @throws CException
          */
-        protected function renderHtml($result, $sid)
+        protected function renderHtml($result, $sid, \CHttpRequest $request)
         {
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
@@ -406,7 +415,7 @@
                         'view' => [
                             'label' => '<span class="oi oi-eye"></span>',
                             'options' => [
-                                'title' => 'View response'
+                                'title' => 'View response',
                             ],
                             'imageUrl' => false,
                             'url' => function ($data) {
@@ -428,17 +437,27 @@
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Update response'
+                                'title' => 'Update response',
+                                'data-method' => 'post',
+                                'data-body' => json_encode([
+                                    $request->csrfTokenName => $request->csrfToken
+                                ]),
+                                'data-confirm' => $this->get('repeatConfirmation', 'Survey', $sid)
                             ],
                             'url' => function ($data) {
                                 return $data['urls']['copy'];
                             }
                         ],
                         'delete' => [
+                            'click' => 'js:function() {}',
                             'label' => '<i class="oi oi-trash"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Delete data'
+                                'title' => 'Delete data',
+                                'data-method' => 'delete',
+                                'data-body' => json_encode([
+                                    $request->csrfTokenName => $request->csrfToken
+                                ])
                             ],
 
                             'url' => function ($data) {
@@ -532,7 +551,9 @@
             }
             header('Content-Type: text/html; charset=utf-8');
 
-            echo '<html><title></title><body style="padding: 20px;">';
+            echo '<html><title></title>';
+
+            echo '<body style="padding: 20px;">';
             if ($this->get('create', 'Survey', $sid, 1)) {
                 echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
                     ['class' => 'btn btn-primary']);
@@ -592,14 +613,40 @@
             ]));
             
             $clientScript->registerScript('confirm', <<<JS
-                $(document).on('click', 'a[data-confirm]', function(e) {
+                $(document).on('click', 'a[data-confirm], a[data-method]', function(e) {
                     e.preventDefault();
                     var url = $(this).attr('href');
-                    bootbox.confirm($(this).data('confirm'), function(result) {
-                        if (result) {
+                    var method = $(this).data('method') || "GET";
+                    var body = $(this).data('body');
+                    
+                    // Send request with correct method
+                    var handler = function() {
+                        if (method === "GET") {
                             window.location.href = url;
+                        } else {
+                            $.ajax({
+                                "type": method,
+                                "url": url,
+                                "data": body
+                            }).done(function(data, status, xhr) {
+                                if (xhr.getResponseHeader('Location')) {
+                                    window.location.href = xhr.getResponseHeader('Location'); 
+                                } else {
+                                    window.location.reload();
+                                }
+                            })
                         }
-                    })
+                    };
+                    
+                    if ($(this).data('confirm')) {
+                        bootbox.confirm($(this).data('confirm'), function(result) {
+                            result || handler();
+                        });
+                    } else {
+                        handler();
+                    }
+                    
+                    
                 })
 
 JS
