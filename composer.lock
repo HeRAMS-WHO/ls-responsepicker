@@ -162,12 +162,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/SAM-IT/yii1-datatables.git",
-                "reference": "504f153bede1331a143a1a5574507725f09578c2"
+                "reference": "900bc96fe263519265565ca563c51ff6333a44f5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SAM-IT/yii1-datatables/zipball/504f153bede1331a143a1a5574507725f09578c2",
-                "reference": "504f153bede1331a143a1a5574507725f09578c2",
+                "url": "https://api.github.com/repos/SAM-IT/yii1-datatables/zipball/900bc96fe263519265565ca563c51ff6333a44f5",
+                "reference": "900bc96fe263519265565ca563c51ff6333a44f5",
                 "shasum": ""
             },
             "require": {
@@ -194,7 +194,7 @@
                 }
             ],
             "description": "Yii widget wrapper for DataTables",
-            "time": "2016-07-26T11:38:23+00:00"
+            "time": "2018-05-21T11:13:19+00:00"
         }
     ],
     "packages-dev": [],
