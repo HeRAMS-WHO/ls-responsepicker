@@ -454,6 +454,7 @@
                             'imageUrl' => false,
                             'options' => [
                                 'title' => 'Delete data',
+                                'data-confirm' => $this->get('deleteConfirmation', 'Survey', $sid),
                                 'data-method' => 'delete',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
