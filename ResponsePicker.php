@@ -640,7 +640,7 @@
                     
                     if ($(this).data('confirm')) {
                         bootbox.confirm($(this).data('confirm'), function(result) {
-                            result || handler();
+                            !result || handler();
                         });
                     } else {
                         handler();
