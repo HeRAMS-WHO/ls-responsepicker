@@ -567,6 +567,13 @@
                             }
                         };
                     }
+                } elseif (isset($row['data'][$name])) {
+                    // Direct property
+                    $gridColumns[$name] = [
+                        'name' => "data.$name",
+                        'header' => $title ?? "Title not configured",
+                        'filter' => empty($filter) ? false : $filter,
+                    ];
                 }
             }
 
