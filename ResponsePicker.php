@@ -8,6 +8,23 @@
 
         protected $storage = 'DbStorage';
 
+        private function deleteEnabled(int $surveyId): bool
+        {
+            return (bool) $this->get('delete', 'Survey', $surveyId);
+        }
+        private function viewEnabled(int $surveyId): bool
+        {
+            return (bool) $this->get('view', 'Survey', $surveyId);
+        }
+        private function updateEnabled(int $surveyId): bool
+        {
+            return (bool) $this->get('update', 'Survey', $surveyId);
+        }
+        private function repeatEnabled(int $surveyId): bool
+        {
+            return (bool) $this->get('repeat', 'Survey', $surveyId);
+        }
+
         public function init()
         {
             $this->subscribe('beforeLoadResponse');
@@ -91,8 +108,11 @@
                 $token = $request->getParam('token');
                 switch($this->event->get("function")) {
                     case 'delete':
+                        if (!$this->deleteEnabled($surveyId)) {
+                            throw new \CHttpException(403, "Deleting not enabled for this survey");
+                        }
                         if (!$request->isDeleteRequest) {
-                            throw new \CHttpException(504, "This endpoint only supports DELETE");
+                            throw new \CHttpException(405, "This endpoint only supports DELETE");
                         }
                         /** @var \Response $response */
                         $response = Response::model($surveyId)->findByAttributes([
@@ -106,6 +126,9 @@
                         die();
                         break;
                     case 'read':
+                        if (!$this->viewEnabled($surveyId)) {
+                            throw new \CHttpException(403, "Viewing not enabled for this survey");
+                        }
                         $response = $this->api->getResponse($surveyId, $responseId);
                         if (isset($response)) {
                             $this->viewResponse($response, $surveyId);
@@ -114,8 +137,12 @@
                         }
                         break;
                     case 'copy':
+                        if (!$this->repeatEnabled($surveyId)) {
+                            throw new \CHttpException(403, "Repeating not enabled for this survey");
+                        }
+
                         if (!$request->isPostRequest) {
-                            throw new \CHttpException(504, "This endpoint only supports POST");
+                            throw new \CHttpException(405, "This endpoint only supports POST");
                         }
                         $this->createCopy($surveyId, $responseId);
                         break;
@@ -397,12 +424,22 @@
             }
 
             $template = [];
-            foreach(['view', 'update', 'repeat', 'delete'] as $action) {
-                if ($this->get($action, 'Survey', $sid, 1)) {
-                    $template[] = '{' . $action . '}';
-                }
-
+            if ($this->viewEnabled($sid)) {
+                $template[] = '{view}';
             }
+
+            if ($this->updateEnabled($sid)) {
+                $template[] = '{update}';
+            }
+
+            if ($this->repeatEnabled($sid)) {
+                $template[] = '{repeat}';
+            }
+
+            if ($this->deleteEnabled($sid)) {
+                $template[] = '{delete}';
+            }
+
             if (!empty($template)) {
                 $gridColumns['actions'] = [
                     'header' => 'Actions',
@@ -468,23 +505,6 @@
                     ]
                 ];
             }
-            $gridColumns['id'] = [
-                'name' => 'data.id',
-                'header' => "Response id",
-                'filter'=> false,
-                'htmlOptions' => [
-                    'width' => '100px'
-                ]
-
-            ];
-            $gridColumns['submitdate'] = [
-                'name' => 'data.submitdate',
-                'header' => "Submit Date",
-                'filter'=> 'text',
-                'htmlOptions' => [
-                    'width' => '200px'
-                ]
-            ];
             $series = [];
             foreach($result as $row) {
                 $id = $row['data']['UOID'];
@@ -507,10 +527,9 @@
             ];
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
-                if (strpos($column, ':') === false) {
-                    $column .= ':none';
-                }
-                list($name, $filter) = explode(':', $column, 2);
+                $parts = explode(':', $column);
+                array_pad($parts, 3, null);
+                list($name, $filter, $title) = $parts;
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
                     'title' => $name
@@ -525,8 +544,8 @@
 
                     $gridColumns[$name] = [
                         'name' => "data.$name",
-                        'header' => $question->question,
-                        'filter' => ($filter == 'none') ? false : $filter,
+                        'header' => $title ?? $question->question,
+                        'filter' => empty($filter) ? false : $filter,
                     ];
                     if (isset($answers) && !empty($answers)) {
                         $gridColumns[$name]['value'] = function ($row) use ($answers, $name) {
