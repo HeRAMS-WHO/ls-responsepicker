@@ -302,7 +302,7 @@
                     'columns' => [
                         'type' => 'text',
                         'label' => 'Show these columns (One question code per line):',
-                        'hint' => 'Enable filtering by adding : and the type of filter (text,select)',
+                        'help' => 'Enable filtering by adding : and the type of filter (text,select,none), add a title override by appending another :',
                         'current' => $this->get('columns', 'Survey', $event->get('survey'), "")
                     ],
                     'skipColumns' => [
