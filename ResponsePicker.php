@@ -8,18 +8,26 @@
 
         protected $storage = 'DbStorage';
 
+        private function createEnabled(int $surveyId): bool
+        {
+            return (bool) $this->get('create', 'Survey', $surveyId);
+        }
+
         private function deleteEnabled(int $surveyId): bool
         {
             return (bool) $this->get('delete', 'Survey', $surveyId);
         }
+
         private function viewEnabled(int $surveyId): bool
         {
             return (bool) $this->get('view', 'Survey', $surveyId);
         }
+
         private function updateEnabled(int $surveyId): bool
         {
             return (bool) $this->get('update', 'Survey', $surveyId);
         }
+
         private function repeatEnabled(int $surveyId): bool
         {
             return (bool) $this->get('repeat', 'Survey', $surveyId);
@@ -217,6 +225,9 @@
                 $choice = $request->getParam('ResponsePicker');
                 if (isset($choice)) {
                     if ($choice == 'new') {
+                        if (!$this->createEnabled($surveyId)) {
+                            throw new \CHttpException(403, "Creation not enabled for this survey");
+                        }
                         $this->event->set('response', false);
                     } else {
                         foreach ($responses as $response) {
@@ -277,27 +288,27 @@
                     'update' => [
                         'type' => 'boolean',
                         'label' => 'Enable update button: ',
-                        'current' => $this->get('update', 'Survey', $event->get('survey'), 1)
+                        'current' => $this->get('update', 'Survey', $event->get('survey'), 0)
                     ],
                     'repeat' => [
                         'type' => 'boolean',
                         'label' => 'Enable repeat button: ',
-                        'current' => $this->get('repeat', 'Survey', $event->get('survey'), 1)
+                        'current' => $this->get('repeat', 'Survey', $event->get('survey'), 0)
                     ],
                     'view' => [
                         'type' => 'boolean',
                         'label' => 'Enable view butfton: ',
-                        'current' => $this->get('view', 'Survey', $event->get('survey'), 1)
+                        'current' => $this->get('view', 'Survey', $event->get('survey'), 0)
                     ],
                     'delete' => [
                         'type' => 'boolean',
                         'label' => 'Enable delete button: ',
-                        'current' => $this->get('delete', 'Survey', $event->get('survey'), 1)
+                        'current' => $this->get('delete', 'Survey', $event->get('survey'), 0)
                     ],
                     'create' => [
                         'type' => 'boolean',
                         'label' => 'Enable create button: ',
-                        'current' => $this->get('create', 'Survey', $event->get('survey'), 1)
+                        'current' => $this->get('create', 'Survey', $event->get('survey'), 0)
                     ],
                     'columns' => [
                         'type' => 'text',
@@ -574,7 +585,7 @@
             echo '<html><title></title>';
 
             echo '<body style="padding: 20px;">';
-            if ($this->get('create', 'Survey', $sid, 1)) {
+            if ($this->get('create', 'Survey', $sid)) {
                 echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
                     ['class' => 'btn btn-primary']);
             }
