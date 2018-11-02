@@ -539,8 +539,7 @@
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
-                array_pad($parts, 3, null);
-                list($name, $filter, $title) = $parts;
+                list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
                     'title' => $name
