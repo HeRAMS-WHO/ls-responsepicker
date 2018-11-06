@@ -202,7 +202,7 @@
                 'sid' => $surveyId,
                 'token' => $response->token
             ]);
-            header('Location :' . $location);
+            header('Location: ' . $location);
             http_response_code(201);
             die();
         }
