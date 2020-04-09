@@ -646,7 +646,101 @@
 
             $clientScript->registerCss('select', implode("\n", [
                 '.datatable-view { padding-top: 16px;}',
-                'table { -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; }'
+                'table { -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; }',
+                'html {
+                    border:none;
+                }
+                body {
+                    border:none;
+                    --primary-button-background-color: #4177c1;
+                    --primary-button-color: white;
+                    --main-background-color: #e0e0e0;
+                    background-color: var(--main-background-color);
+                }
+
+                a {
+                    color: #5791e1;
+                }
+
+                .btn {
+                    cursor: pointer;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    box-shadow: none;
+                    background-image: none;
+                    border: none;
+                    text-decoration: none;
+                    outline: none;
+                    text-align: center;
+                }
+
+                .btn-primary {
+                    background-color: var(--primary-button-background-color);
+                    color: var(--primary-button-color);
+                    border: 1px solid var(--primary-button-background-color);
+                    transition: color 0.2s, background 0.2s, border 0.2s;
+                    text-shadow: none;
+                }
+
+                .btn.new-facility {
+                    float: right;
+                    margin-top: 20px;
+                }
+
+                table,
+                table.dataTable {
+                    background-color: white;
+                    padding: 0;
+                    overflow: auto;
+                    border-collapse: collapse;
+                }
+
+                .datatable-view {
+                    background: white;
+                    border-radius: 10px;
+                    padding: 20px 25px;
+                    margin-top: 20px;
+                }
+
+                .page-link {
+                    color:var(--primary-button-background-color);
+                    font-size: 13px;
+                }
+
+                .form-control {
+                    font-size: 12px;
+                    height: 38px;
+                }
+
+                div.dataTables_wrapper div.dataTables_length label, div.dataTables_wrapper div.dataTables_info {
+                    font-size:12px;
+                }
+
+                .dataTables_wrapper.container-fluid {
+                    margin:0;
+                    padding: 0;
+                }
+
+                table thead tr th,
+                .table thead tr th {
+                    background: #f6f6f6;
+                    color: #9d9d9d;
+                    font-family: "Source Sans Pro";
+                    font-weight: 400;
+                    text-transform: uppercase;
+                    font-size: 11px;
+                    padding: 10px;
+                }
+
+                .table tbody tr.odd td,
+                .table tbody tr.even td {
+                    padding: 10px 5px 10px 10px;
+                    font-family: "Source Sans Pro";
+                    color: #222222;
+                    vertical-align: middle;
+                    font-size: 14px;
+                }'
             ]));
             
             $clientScript->registerScript('confirm', <<<JS
