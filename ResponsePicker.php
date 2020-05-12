@@ -1,5 +1,16 @@
 <?php
     require_once(__DIR__ . '/vendor/autoload.php');
+
+/**
+ * Add conditional classloader.
+ *
+ */
+if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/ResponsePicker.php')) {
+    require_once __DIR__ . '/test/ResponsePicker.php';
+    return;
+}
+
+
     class ResponsePicker extends \ls\pluginmanager\PluginBase
     {
 
