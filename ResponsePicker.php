@@ -9,8 +9,7 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
  */
 if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/ResponsePicker.php')) {
     require_once __DIR__ . '/test/ResponsePicker.php';
-    return;
-}
+} else {
 
 
     class ResponsePicker extends \ls\pluginmanager\PluginBase
@@ -801,3 +800,4 @@ JS
             $clientScript->registerScriptFile("$bowerPath/datatables/media/js/dataTables.bootstrap4.js", $clientScript::POS_END);
         }
     }
+}
