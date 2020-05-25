@@ -498,7 +498,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Update response',
+                                'title' => 'Add a new response',
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -534,6 +534,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 $uoid = $row['data']['UOID'];
                 $row['uoid'] = $uoid;
                 
+                if(array_key_exists('Update',$row['data']))
+                    $row['data']['Update'] = date('Y-m-d',strtotime($row['data']['Update']));
+                
                 if (!isset($series[$uoid])) {
                     $series[$uoid] = $row;
                 } 
@@ -549,7 +552,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $gridColumns['uoid'] = [
                 'name' => 'uoid',
                 'header' => 'uoid',
-                'filter' => 'select-strict'
+                'filter' => 'field'
             ];
 
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
@@ -764,11 +767,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 .table tbody tr {
                     cursor: pointer;
+                    transition: color 0.2s;
                 }
 
                 .table tbody tr:hover td {
                     cursor: pointer;
                     color:#5791e1;
+                    transition: color 0.2s;
                 }
 
                 .table tbody tr.shown td{
@@ -816,13 +821,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 table.child {
                     background-color: #42424a !important;
-                    table-layout: fixed;
+                    table-layout: auto;
                     margin: 0 auto !important;
-                    width: 99.5%;
-                    border-bottom: 3px solid black;
+                    width: 99%;
+                    border-bottom: 3px solid #333333;
                     border-top: 3px solid #5791e1;
                     padding-top: 3px;
-                    padding-bottom: 10px;
+                    padding-bottom: 15px;
                 }
 
                 table.child tbody tr {
@@ -866,33 +871,28 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
 
                 table.child tbody tr td.button-column, table.child tbody tr td.button-column-add {
-                    width: 93px;
                     padding-left: 20px;
+                    width:80px;
+                }
+
+                table.child tbody tr td.button-column a {
+                    margin-right: 7px;
+                }
+
+                table.child tbody tr td.button-column a:last-child {
+                    margin-right: 0px;
                 }
 
                 table.child tbody tr td.button-column-add a {
                     font-style: italic;
                     transition: color 0.2s;
+                    color: #aaaaaa; 
                 }
+
                 table.child tbody tr td.button-column-add a:hover {
                     text-decoration: none;
+                    color: white;
                     transition: color 0.2s;
-                }
-
-                div.adding {
-                    background-color: #42424a;
-                    cursor: pointer;
-                    padding: 15px 10px;
-                }
-
-                div.adding a {
-                    color: white !important;
-                    font-size: 12px;
-                    text-decoration: none;
-                    background-color: #5791e1;
-                    padding: 5px 10px !important;
-                    border-radius: 10px;
-                    height: 50px;
                 }'
             ]));
             
