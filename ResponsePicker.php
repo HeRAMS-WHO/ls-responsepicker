@@ -529,26 +529,22 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ]
                 ];
             }
+
             foreach($result as $row) {
                 $uoid = $row['data']['UOID'];
                 $row['uoid'] = $uoid;
+                
                 if (!isset($series[$uoid])) {
                     $series[$uoid] = $row;
-                } else if($series[$uoid]['data']['id'] < $row['data']['id'])
+                } 
+                
+                if($series[$uoid]['data']['id'] < $row['data']['id']) {
+                    $row['child'] = $series[$uoid]['child'];
+                    $row['child'][] = $row;
+                    unset($series[$uoid]['child']);
                     $series[$uoid] = $row;
+                } else $series[$uoid]['child'][] = $row;   
             }
-            
-            foreach($result as &$row) {
-                $uoid = $row['data']['UOID'];
-                $row['final'] = ($series[$uoid]['data']['id'] === $row['data']['id']) ? "True" : "False";
-                if($row['final'] === "False") {
-                    $series[$uoid]['child'][] = $row;
-                } else {
-                    $series[$uoid]['final'] = "True";
-                }
-            }
-
-            $result = $series;
 
             $gridColumns['uoid'] = [
                 'name' => 'uoid',
@@ -618,7 +614,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             \Yii::import('zii.widgets.grid.CGridView');
 
             echo Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
-                'dataProvider' => new CArrayDataProvider($result, [
+                'dataProvider' => new CArrayDataProvider($series, [
                     'pagination' => [
                         'pageSize' => 10,
                     ],
@@ -766,6 +762,19 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 10px;
                 }
 
+                .table tbody tr {
+                    cursor: pointer;
+                }
+
+                .table tbody tr:hover td {
+                    cursor: pointer;
+                    color:#5791e1;
+                }
+
+                .table tbody tr.shown td{
+                    color:#5791e1;
+                }
+
                 .table tbody tr.group {
                     cursor: pointer;
                     background-color: rgba(0, 0, 0, .05) !important;
@@ -806,14 +815,22 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
 
                 table.child {
-                    width: 100%;
+                    background-color: #42424a !important;
                     table-layout: fixed;
+                    margin: 0 auto !important;
+                    width: 99.5%;
+                    border-bottom: 3px solid black;
+                    border-top: 3px solid #5791e1;
+                    padding-top: 3px;
+                    padding-bottom: 10px;
                 }
 
                 table.child tbody tr {
                     background-color: #42424a !important;
                     color: white;
                     cursor: default;
+                    margin-left: 10px;
+                    padding-top: 10px;
                 }
 
                 table.child tbody tr:hover {
@@ -848,9 +865,18 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 0;
                 }
 
-                table.child tbody tr td.button-column {
+                table.child tbody tr td.button-column, table.child tbody tr td.button-column-add {
                     width: 93px;
                     padding-left: 20px;
+                }
+
+                table.child tbody tr td.button-column-add a {
+                    font-style: italic;
+                    transition: color 0.2s;
+                }
+                table.child tbody tr td.button-column-add a:hover {
+                    text-decoration: none;
+                    transition: color 0.2s;
                 }
 
                 div.adding {
@@ -908,16 +934,22 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 })
 
                 function format(data, update, urls) {
-                    return "<tr><td class='button-column'>" +
+                    return "<tr class='response'><td class='button-column'>" +
                         "<a title='"+actions.view.options.title+"' href='"+urls.read+"'>"+actions.view.label+"</a>"+
                         "<a title='"+actions.update.options.title+"' data-confirm='"+actions.update.options['data-confirm']+"' href='"+urls.update+"'>"+actions.update.label+"</a>"+
                         "<a title='"+actions.delete.options.title+"' data-confirm='"+actions.delete.options['data-confirm']+"' data-method='"+actions.delete.options['data-method']+"' data-body='"+actions.delete.options['data-method']+"' class='delete' href='"+urls.delete+"'>"+actions.delete.label+"</a>"+
                     '</td>' +
-                    '<td rowspan="1" colspan="1" class="sorting">' + data.uoid + '</td>' +
                     '<td>' + update + '</td>' +
                     '<td></td>' +
                     '<td></td>' +
                     '<td></td>' +
+                    '<td></td>' +
+                    '</tr>';
+                };
+
+                function addNewReponse(data, update, urls) {
+                    return "<tr><td class='button-column-add' colspan='6'>" +
+                        "<a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+urls.copy+"'>"+actions.repeat.label+" Add a new response</a>" +
                     '</tr>';
                 };
 
@@ -937,13 +969,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         let data = row.data();
                         if (json[data.uoid].child != null) {
                             var element = '<table class="child dataTable table-bordered table table-striped dataTable no-footer">';
-                            element += format(data, data.data_Update, json[data.uoid].urls);
+                            element += addNewReponse(data, data.data_Update, json[data.uoid].urls);
                             for (var child of json[data.uoid].child) {
                                 element += format(data, child.data.Update, child.urls);
                             };
                             element += '</table>';
 
-                            element += "<div class='adding'><a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+json[data.uoid].urls.copy+"'>Add a new response</a></div>";
+                            //element += "<div class='adding'><a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+json[data.uoid].urls.copy+"'>Add a new response</a></div>";
                             row.child(element).show();
                             tr.addClass('shown');
                         }
