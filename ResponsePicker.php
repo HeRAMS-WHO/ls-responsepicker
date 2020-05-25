@@ -529,26 +529,33 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ]
                 ];
             }
-            $series = [];
             foreach($result as $row) {
-                $id = $row['data']['UOID'];
-                if (!isset($series[$id])) {
-                    $series[$id] = $row['data']['id'];
+                $uoid = $row['data']['UOID'];
+                $row['uoid'] = $uoid;
+                if (!isset($series[$uoid])) {
+                    $series[$uoid] = $row;
+                } else if($series[$uoid]['data']['id'] < $row['data']['id'])
+                    $series[$uoid] = $row;
+            }
+            
+            foreach($result as &$row) {
+                $uoid = $row['data']['UOID'];
+                $row['final'] = ($series[$uoid]['data']['id'] === $row['data']['id']) ? "True" : "False";
+                if($row['final'] === "False") {
+                    $series[$uoid]['child'][] = $row;
                 } else {
-                    $series[$id] = max($series[$id], $row['data']['id']);
+                    $series[$uoid]['final'] = "True";
                 }
             }
 
-            foreach($result as &$row) {
-                $id = $row['data']['UOID'];
-                $row['final'] = ($series[$id] === $row['data']['id']) ? "True" : "False";
-            }
+            $result = $series;
 
-            $gridColumns['final'] = [
-                'name' => 'final',
-                'header' => 'Last',
+            $gridColumns['uoid'] = [
+                'name' => 'uoid',
+                'header' => 'uoid',
                 'filter' => 'select-strict'
             ];
+
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
@@ -630,6 +637,10 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 
             ], true);
             $this->registerClientScript(Yii::app()->clientScript);
+            echo '<script>';
+                echo 'let actions = '.json_encode($gridColumns['actions']['buttons']).';';
+                echo 'let json = '.json_encode($series).';';
+            echo '</script>';
             echo '</body></html>';
             die();
         }
@@ -658,13 +669,21 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $clientScript->registerScriptFile("$bowerPath/bootbox/bootbox.js");
 
             $clientScript->registerCss('select', implode("\n", [
-                '.datatable-view { padding-top: 16px;}',
-                'table { -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; }',
-                'html {
-                    border:none;
+                '.datatable-view {
+                    padding-top: 16px;
                 }
+
+                table {
+                    -webkit-border-horizontal-spacing: 0px;
+                    -webkit-border-vertical-spacing: 0px;
+                }
+
+                html {
+                    border: none;
+                }
+
                 body {
-                    border:none;
+                    border: none;
                     --primary-button-background-color: #4177c1;
                     --primary-button-color: white;
                     --main-background-color: #e0e0e0;
@@ -717,7 +736,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
 
                 .page-link {
-                    color:var(--primary-button-background-color);
+                    color: var(--primary-button-background-color);
                     font-size: 13px;
                 }
 
@@ -726,12 +745,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     height: 38px;
                 }
 
-                div.dataTables_wrapper div.dataTables_length label, div.dataTables_wrapper div.dataTables_info {
-                    font-size:12px;
+                div.dataTables_wrapper div.dataTables_length label,
+                div.dataTables_wrapper div.dataTables_info {
+                    font-size: 12px;
                 }
 
                 .dataTables_wrapper.container-fluid {
-                    margin:0;
+                    margin: 0;
                     padding: 0;
                 }
 
@@ -746,13 +766,107 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 10px;
                 }
 
-                .table tbody tr.odd td,
-                .table tbody tr.even td {
+                .table tbody tr.group {
+                    cursor: pointer;
+                    background-color: rgba(0, 0, 0, .05) !important;
+                }
+
+                .table tbody tr.group:hover {
+                    background-color: #ddd;
+                }
+
+                .table tbody tr.group td {
+                    color: #222222 !important;
                     padding: 10px 5px 10px 10px;
                     font-family: "Source Sans Pro";
-                    color: #222222;
                     vertical-align: middle;
                     font-size: 14px;
+                }
+
+
+                table.dataTable {
+                    padding: 0;
+                    margin: 0 !important;
+                    width: 100%;
+                    border: none;
+                    border-collapse: collapse;
+                    border-spacing: 0px;
+                    font-size: 14px;
+                }
+
+                .table td,
+                .table th {
+                    padding: 0;
+                }
+
+                table tbody tr.odd td,
+                table tbody tr.even td {
+                    padding: 10px;
+                }
+
+
+                table.child {
+                    width: 100%;
+                    table-layout: fixed;
+                }
+
+                table.child tbody tr {
+                    background-color: #42424a !important;
+                    color: white;
+                    cursor: default;
+                }
+
+                table.child tbody tr:hover {
+                    background-color: #42424a;
+                }
+
+                table.child tbody tr td,
+                table.child tbody tr.odd td,
+                table.child tbody tr.even td {
+                    color: white !important;
+                    border: none;
+                    font-size: 14px;
+                    padding: 10px;
+                }
+
+                table tbody tr td a .oi {
+                    display: none;
+                }
+                table.child tbody tr td a .oi {
+                    display:inline-block;
+                }
+                table.child tbody tr td a {
+                    color: white;
+                    padding-right: 5px;
+                }
+
+                table.child tbody tr td a:hover {
+                    color: grey;
+                }
+
+                table.child tbody tr td table {
+                    padding: 0;
+                }
+
+                table.child tbody tr td.button-column {
+                    width: 93px;
+                    padding-left: 20px;
+                }
+
+                div.adding {
+                    background-color: #42424a;
+                    cursor: pointer;
+                    padding: 15px 10px;
+                }
+
+                div.adding a {
+                    color: white !important;
+                    font-size: 12px;
+                    text-decoration: none;
+                    background-color: #5791e1;
+                    padding: 5px 10px !important;
+                    border-radius: 10px;
+                    height: 50px;
                 }'
             ]));
             
@@ -792,6 +906,49 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                     
                 })
+
+                function format(data, update, urls) {
+                    return "<tr><td class='button-column'>" +
+                        "<a title='"+actions.view.options.title+"' href='"+urls.read+"'>"+actions.view.label+"</a>"+
+                        "<a title='"+actions.update.options.title+"' data-confirm='"+actions.update.options['data-confirm']+"' href='"+urls.update+"'>"+actions.update.label+"</a>"+
+                        "<a title='"+actions.delete.options.title+"' data-confirm='"+actions.delete.options['data-confirm']+"' data-method='"+actions.delete.options['data-method']+"' data-body='"+actions.delete.options['data-method']+"' class='delete' href='"+urls.delete+"'>"+actions.delete.label+"</a>"+
+                    '</td>' +
+                    '<td rowspan="1" colspan="1" class="sorting">' + data.uoid + '</td>' +
+                    '<td>' + update + '</td>' +
+                    '<td></td>' +
+                    '<td></td>' +
+                    '<td></td>' +
+                    '</tr>';
+                };
+
+                var table = $('#DataTables_Table_0').dataTable();
+                var api = table.api();
+                $('#DataTables_Table_0 tbody').on('click', 'td', function () {
+                    var tr = $(this).closest('tr');
+                    var row = api.row( tr );
+                    var data = row.data();
+                    
+                    if (row.child.isShown()) {
+                        // This row is already open - close it
+                        row.child.hide();
+                        tr.removeClass('shown');
+                    } else {
+                        // Open this row
+                        let data = row.data();
+                        if (json[data.uoid].child != null) {
+                            var element = '<table class="child dataTable table-bordered table table-striped dataTable no-footer">';
+                            element += format(data, data.data_Update, json[data.uoid].urls);
+                            for (var child of json[data.uoid].child) {
+                                element += format(data, child.data.Update, child.urls);
+                            };
+                            element += '</table>';
+
+                            element += "<div class='adding'><a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+json[data.uoid].urls.copy+"'>Add a new response</a></div>";
+                            row.child(element).show();
+                            tr.addClass('shown');
+                        }
+                    }
+                } );
 
 JS
             );
