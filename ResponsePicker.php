@@ -463,10 +463,20 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             if ($this->deleteEnabled($sid)) {
                 $template[] = '{delete}';
             }
+            
+            $gridColumns['count'] = [
+                'name' => 'count',
+                'header' => '# Responses',
+                'htmlOptions' => [
+                    'width' => '20px',
+                ],
+                'filter' => false
+            ];
 
             if (!empty($template)) {
                 $gridColumns['actions'] = [
                     'header' => 'Actions',
+                    'visible' => false,
                     'htmlOptions' => [
                         'width' => '100px',
                     ],
@@ -533,10 +543,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             foreach($result as $row) {
                 $uoid = $row['data']['UOID'];
                 $row['uoid'] = $uoid;
-                
-                if(array_key_exists('Update',$row['data']))
+                $row['DT_RowId'] = $uoid;
+                if(array_key_exists('Update',$row['data'])) {
                     $row['data']['Update'] = date('Y-m-d',strtotime($row['data']['Update']));
-                
+                }
+
                 if (!isset($series[$uoid])) {
                     $series[$uoid] = $row;
                 } 
@@ -546,14 +557,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     $row['child'][] = $row;
                     unset($series[$uoid]['child']);
                     $series[$uoid] = $row;
-                } else $series[$uoid]['child'][] = $row;   
+                } else $series[$uoid]['child'][] = $row;
+                $series[$uoid]['count'] = count($series[$uoid]['child']);
             }
-
-            $gridColumns['uoid'] = [
-                'name' => 'uoid',
-                'header' => 'uoid',
-                'filter' => 'field'
-            ];
 
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
@@ -595,6 +601,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
             }
 
+            $gridColumns['uoid'] = [
+                'name' => 'DT_RowId'
+            ];
 
             foreach ($columns as $column => $dummy) {
                 if (substr($column, 0, 4) == 'DISP') {
@@ -818,16 +827,19 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 10px;
                 }
 
+                table tbody tr td a .oi {
+                    display: none;
+                }
 
                 table.child {
                     background-color: #42424a !important;
                     table-layout: auto;
                     margin: 0 auto !important;
-                    width: 99%;
+                    width: 99.8%;
                     border-bottom: 3px solid #333333;
                     border-top: 3px solid #5791e1;
                     padding-top: 3px;
-                    padding-bottom: 15px;
+                    padding-bottom: 20px;
                 }
 
                 table.child tbody tr {
@@ -851,9 +863,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 10px;
                 }
 
-                table tbody tr td a .oi {
-                    display: none;
-                }
                 table.child tbody tr td a .oi {
                     display:inline-block;
                 }
@@ -869,8 +878,12 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 table.child tbody tr td table {
                     padding: 0;
                 }
+                
+                table.child tbody tr td:first-child {
+                    width: 10px;
+                }
 
-                table.child tbody tr td.button-column, table.child tbody tr td.button-column-add {
+                table.child tbody tr td.button-column, table.child tbody tr td.button-column-add, table.child tbody tr td.id-column {
                     padding-left: 20px;
                     width:80px;
                 }
@@ -886,7 +899,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 table.child tbody tr td.button-column-add a {
                     font-style: italic;
                     transition: color 0.2s;
-                    color: #aaaaaa; 
+                    color: #999999; 
                 }
 
                 table.child tbody tr td.button-column-add a:hover {
@@ -933,52 +946,51 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                 })
 
-                function format(data, update, urls) {
-                    return "<tr class='response'><td class='button-column'>" +
+                function format(data, update, id, urls) {
+                    return "<tr class='response'>"+
+                    "<td class='button-column'>" +
                         "<a title='"+actions.view.options.title+"' href='"+urls.read+"'>"+actions.view.label+"</a>"+
                         "<a title='"+actions.update.options.title+"' data-confirm='"+actions.update.options['data-confirm']+"' href='"+urls.update+"'>"+actions.update.label+"</a>"+
-                        "<a title='"+actions.delete.options.title+"' data-confirm='"+actions.delete.options['data-confirm']+"' data-method='"+actions.delete.options['data-method']+"' data-body='"+actions.delete.options['data-method']+"' class='delete' href='"+urls.delete+"'>"+actions.delete.label+"</a>"+
+                        "<a title='"+actions.delete.options.title+"' data-confirm='"+actions.delete.options['data-confirm']+"' data-method='"+actions.delete.options['data-method']+"' data-body='"+actions.delete.options['data-body']+"' class='delete' href='"+urls.delete+"'>"+actions.delete.label+"</a>"+
                     '</td>' +
-                    '<td>' + update + '</td>' +
-                    '<td></td>' +
-                    '<td></td>' +
-                    '<td></td>' +
-                    '<td></td>' +
+                    "<td class='id-column'>" + id + "</td>" +
+                    '<td colspan="5">' + update + '</td>' +
                     '</tr>';
                 };
 
                 function addNewReponse(data, update, urls) {
-                    return "<tr><td class='button-column-add' colspan='6'>" +
-                        "<a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+urls.copy+"'>"+actions.repeat.label+" Add a new response</a>" +
+                    return "<tr>"+
+                    "<td class='button-column-add' colspan='7'>" +
+                        "<a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-body']+"'  href='"+urls.copy+"'>"+actions.repeat.label+" Add a new response</a>" +
+                    '<td>' +
                     '</tr>';
                 };
+                
 
                 var table = $('#DataTables_Table_0').dataTable();
                 var api = table.api();
-                $('#DataTables_Table_0 tbody').on('click', 'td', function () {
+                table.on('click', 'tr', function () {
                     var tr = $(this).closest('tr');
                     var row = api.row( tr );
                     var data = row.data();
-                    
+                    let uoid = $(tr).attr('id');
+                    if(!uoid) return;
                     if (row.child.isShown()) {
-                        // This row is already open - close it
                         row.child.hide();
                         tr.removeClass('shown');
-                    } else {
-                        // Open this row
-                        let data = row.data();
-                        if (json[data.uoid].child != null) {
-                            var element = '<table class="child dataTable table-bordered table table-striped dataTable no-footer">';
-                            element += addNewReponse(data, data.data_Update, json[data.uoid].urls);
-                            for (var child of json[data.uoid].child) {
-                                element += format(data, child.data.Update, child.urls);
-                            };
-                            element += '</table>';
-
-                            //element += "<div class='adding'><a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-method']+"'  href='"+json[data.uoid].urls.copy+"'>Add a new response</a></div>";
-                            row.child(element).show();
-                            tr.addClass('shown');
-                        }
+                        return;
+                    } 
+                    // Open this row
+                    let jsonData = json[uoid];
+                    if (jsonData.child != null) {
+                        var element = '<table class="child dataTable table-bordered table table-striped dataTable no-footer">';
+                        element += addNewReponse(data, data.data_Update, jsonData.urls);
+                        for (var child of jsonData.child) {
+                            element += format(data, child.data.Update, child.data.id, child.urls);
+                        };
+                        element += '</table>';
+                        row.child(element).show();
+                        tr.addClass('shown');
                     }
                 } );
 
