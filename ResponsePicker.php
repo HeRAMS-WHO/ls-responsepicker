@@ -464,6 +464,17 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 $template[] = '{delete}';
             }
             
+
+            $gridColumns['control'] = [
+                'name' => '',
+                'header' => '',
+                'htmlOptions' => [
+                    'class' => 'open',
+                    'width' => '20px',
+                ],
+                'filter' => false
+            ];
+
             $gridColumns['count'] = [
                 'name' => 'count',
                 'header' => '# Responses',
@@ -543,7 +554,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             foreach($result as $row) {
                 $uoid = $row['data']['UOID'];
                 $row['uoid'] = $uoid;
-                $row['DT_RowId'] = $uoid;
                 if(array_key_exists('Update',$row['data'])) {
                     $row['data']['Update'] = date('Y-m-d',strtotime($row['data']['Update']));
                 }
@@ -601,8 +611,10 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
             }
 
-            $gridColumns['uoid'] = [
-                'name' => 'DT_RowId'
+            $gridColumns['UOID'] = [
+                'name' => 'data.UOID',
+                'header' => 'UOID',
+                'filter' => false                
             ];
 
             foreach ($columns as $column => $dummy) {
@@ -645,8 +657,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 
             ], true);
             $this->registerClientScript(Yii::app()->clientScript);
+            $actions = $gridColumns['actions']['buttons'];
+            $template = explode(' ',$gridColumns['actions']['template']);
+            foreach($gridColumns['actions']['buttons'] as $key => $action) {
+                if(!in_array('{'.$key.'}',$template))
+                    $actions[$key] = null;
+            }
             echo '<script>';
-                echo 'let actions = '.json_encode($gridColumns['actions']['buttons']).';';
+                echo 'let actions = '.json_encode($actions).';';
                 echo 'let json = '.json_encode($series).';';
             echo '</script>';
             echo '</body></html>';
@@ -821,90 +839,154 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 .table th {
                     padding: 0;
                 }
-
+                
                 table tbody tr.odd td,
                 table tbody tr.even td {
                     padding: 10px;
+                    position: relative;
                 }
 
-                table tbody tr td a .oi {
-                    display: none;
+                table tbody tr td.open:first-child:before {
+                    top: 50%;
+                    left: 50%;
+                    height: 16px;
+                    width: 16px;
+                    margin-top: -10px;
+                    margin-left: -10px;
+                    display: block;
+                    position: absolute;
+                    color: white;
+                    border: 2px solid white;
+                    border-radius: 14px;
+                    box-shadow: 0 0 3px #444;
+                    box-sizing: content-box;
+                    text-align: center;
+                    text-indent: 0 !important;
+                    line-height: 14px;
+                    content: "+";
+                    background-color: #4177c1;
                 }
 
                 table.child {
                     background-color: #42424a !important;
                     table-layout: auto;
                     margin: 0 auto !important;
-                    width: 99.8%;
+                    width: 99.5%;
                     border-bottom: 3px solid #333333;
                     border-top: 3px solid #5791e1;
                     padding-top: 3px;
-                    padding-bottom: 20px;
+                    padding-bottom: 50px;
+                    padding-left: 40px;
+                    padding-right: 40px;
+                    cursor: default !important;
                 }
 
-                table.child tbody tr {
+                table.child tr {
                     background-color: #42424a !important;
                     color: white;
-                    cursor: default;
+                    cursor: default !important;
                     margin-left: 10px;
                     padding-top: 10px;
                 }
 
-                table.child tbody tr:hover {
+                table.child tr:hover {
                     background-color: #42424a;
                 }
 
-                table.child tbody tr td,
-                table.child tbody tr.odd td,
-                table.child tbody tr.even td {
+                table.child tr td {
                     color: white !important;
                     border: none;
                     font-size: 14px;
-                    padding: 10px;
+                    padding: 13px;
+                    cursor: default !important;
                 }
 
-                table.child tbody tr td a .oi {
+                table.child tr.response td {
+                    border-top: 1px solid #333 !important;
+                }
+
+                table.child tr.response:last-child td {
+                    border-bottom: 1px solid #333 !important;
+                }
+
+                table.child tr td a .oi {
                     display:inline-block;
                 }
-                table.child tbody tr td a {
+                table.child tr td a {
                     color: white;
                     padding-right: 5px;
                 }
 
-                table.child tbody tr td a:hover {
+                table.child tr td a:hover {
                     color: grey;
                 }
 
-                table.child tbody tr td table {
+                table.child tr td table {
                     padding: 0;
                 }
                 
-                table.child tbody tr td:first-child {
+                table.child tr td:first-child {
                     width: 10px;
                 }
 
-                table.child tbody tr td.button-column, table.child tbody tr td.button-column-add, table.child tbody tr td.id-column {
+                table.child tr td.button-column, table.child tr td.button-column-add{
                     padding-left: 20px;
                     width:80px;
                 }
 
-                table.child tbody tr td.button-column a {
+                table.child tr td.date-column {
+                    padding-left: 20px;
+                    width:100px;
+                }
+
+                table.child tr td.name-column {
+                    padding: 20px 20px 10px;
+                    width:auto;
+                    font-size: 16px;
+                    line-height: 20px;
+                }
+
+                table.child tr td.name-column i {
+                    font-size: 12px;
+                    line-height: 12px;
+                    margin-left: 5px;
+                    display:inline-block;
+                }
+
+
+                table.child tr td.title-column {
+                    padding-left: 20px;
+                    width:auto;
+                    font-size: 13px;
+                    line-height: 16px;
+                    color: #999999 !important;
+                }
+
+                table.child tr td.id-column {
+                    color: #999999 !important;
+                    font-style: italic;
+                    font-size: 13px;
+                }
+
+                table.child tr td.button-column a {
                     margin-right: 7px;
                 }
 
-                table.child tbody tr td.button-column a:last-child {
+                table.child tr td.button-column a:last-child {
                     margin-right: 0px;
                 }
-
-                table.child tbody tr td.button-column-add a {
+                table.child tr td.button-column-add {
+                    border-top: 1px solid #333;
+                }
+                table.child tr td.button-column-add a {
                     font-style: italic;
                     transition: color 0.2s;
-                    color: #999999; 
+                    color: white; 
                 }
 
-                table.child tbody tr td.button-column-add a:hover {
+                table.child tr td.button-column-add a:hover {
                     text-decoration: none;
-                    color: white;
+                    color: #999999;
                     transition: color 0.2s;
                 }'
             ]));
@@ -946,24 +1028,99 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                 })
 
-                function format(data, update, id, urls) {
-                    return "<tr class='response'>"+
-                    "<td class='button-column'>" +
-                        "<a title='"+actions.view.options.title+"' href='"+urls.read+"'>"+actions.view.label+"</a>"+
-                        "<a title='"+actions.update.options.title+"' data-confirm='"+actions.update.options['data-confirm']+"' href='"+urls.update+"'>"+actions.update.label+"</a>"+
-                        "<a title='"+actions.delete.options.title+"' data-confirm='"+actions.delete.options['data-confirm']+"' data-method='"+actions.delete.options['data-method']+"' data-body='"+actions.delete.options['data-body']+"' class='delete' href='"+urls.delete+"'>"+actions.delete.label+"</a>"+
-                    '</td>' +
-                    "<td class='id-column'>" + id + "</td>" +
-                    '<td colspan="5">' + update + '</td>' +
-                    '</tr>';
+                function format(update, id, urls) {
+
+                    let row = document.createElement('tr');
+                    row.classList.add('response');
+                    var cell = document.createElement('td');
+                    cell.classList.add('button-column');
+                    row.appendChild(cell);
+                    var link;
+                    if(actions.view) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.view.options.title);
+                        link.setAttribute('href', urls.read);
+                        link.innerHTML = actions.view.label;
+                        cell.appendChild(link);
+                    }
+                    
+                    if(actions.update) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.update.options.title);
+                        link.setAttribute('data-confirm', actions.update.options['data-confirm']);
+                        link.setAttribute('href', urls.update);
+                        link.innerHTML = actions.update.label;
+                        cell.appendChild(link);
+                    }
+
+                    if(actions.delete) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.delete.options.title);
+                        link.setAttribute('data-confirm', actions.delete.options['data-confirm']);
+                        link.setAttribute('data-method', actions.delete.options['data-method']);
+                        link.setAttribute('data-body', actions.delete.options['data-body']);
+                        link.setAttribute('href', urls.delete);
+                        link.innerHTML = actions.delete.label;
+                        cell.appendChild(link);
+                    }
+                    
+                    cell = document.createElement('td');
+                    cell.classList.add('date-column');
+                    cell.innerHTML = update;
+                    row.appendChild(cell);
+
+                    cell = document.createElement('td');
+                    cell.classList.add('id-column');
+                    cell.innerHTML = 'Response Id : ' + id;
+                    cell.setAttribute('colspan', 6);
+                    row.appendChild(cell);
+                    return row;
+                    
                 };
 
-                function addNewReponse(data, update, urls) {
-                    return "<tr>"+
-                    "<td class='button-column-add' colspan='7'>" +
-                        "<a  title='"+actions.repeat.options.title+"' data-confirm='"+actions.repeat.options['data-confirm']+"' data-method='"+actions.repeat.options['data-method']+"' data-body='"+actions.repeat.options['data-body']+"'  href='"+urls.copy+"'>"+actions.repeat.label+" Add a new response</a>" +
-                    '<td>' +
-                    '</tr>';
+                function addName(name, geo1) {
+                    let row = document.createElement('tr');
+                    let cell = document.createElement('td');
+                    cell.classList.add('name-column');
+                    cell.setAttribute('colspan', 7);
+                    cell.innerHTML = name;
+                    if(geo1) {
+                        cell.innerHTML += ' <i>' + geo1 + '</i>';
+                    }
+                    row.appendChild(cell);
+                    return row;
+                };
+
+
+
+                function addTableTile(child) {
+                    let row = document.createElement('tr');
+                    let cell = document.createElement('td');
+                    cell.classList.add('title-column');
+                    cell.setAttribute('colspan', 7);
+                    cell.textContent = "List of responses ("+child+")";
+                    row.appendChild(cell);
+                    return row;
+                };
+
+                function addNewReponse(update, urls) {
+                    let row = document.createElement('tr');
+                    let cell = document.createElement('td');
+                    cell.classList.add('button-column-add');
+                    cell.setAttribute('colspan', 7);
+                    
+                    if(actions.repeat) {
+                        let link = document.createElement('a');
+                        link.setAttribute('title', actions.repeat.options.title);
+                        link.setAttribute('data-confirm', actions.repeat.options['data-confirm']);
+                        link.setAttribute('data-method', actions.repeat.options['data-method']);
+                        link.setAttribute('data-body', actions.repeat.options['data-body']);
+                        link.setAttribute('href', urls.copy);
+                        link.innerHTML = actions.repeat.label+" Add a response";
+                        cell.appendChild(link);
+                        row.appendChild(cell);
+                    }
+                    return row;
                 };
                 
 
@@ -983,12 +1140,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     // Open this row
                     let jsonData = json[uoid];
                     if (jsonData.child != null) {
-                        var element = '<table class="child dataTable table-bordered table table-striped dataTable no-footer">';
-                        element += addNewReponse(data, data.data_Update, jsonData.urls);
+                        let element = document.createElement('table');
+                        element.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
+                        element.appendChild(addName(data.data_MoSD2, data.data_GEO1));
+                        element.appendChild(addTableTile(jsonData.child.length));
+                        element.appendChild(addNewReponse(data.data_Update, jsonData.urls));
                         for (var child of jsonData.child) {
-                            element += format(data, child.data.Update, child.data.id, child.urls);
+                            element.appendChild(format(child.data.Update, child.data.id, child.urls));
                         };
-                        element += '</table>';
                         row.child(element).show();
                         tr.addClass('shown');
                     }
