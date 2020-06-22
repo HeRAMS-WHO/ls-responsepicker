@@ -572,6 +572,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             }
 
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
+            $responsesColumns = ['update', 'response_id'];
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
                 list($name, $filter, $title) = array_pad($parts, 3, null);
@@ -664,6 +665,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     $actions[$key] = null;
             }
             echo '<script>';
+                echo 'let columns = '.json_encode($responsesColumns).';';
                 echo 'let actions = '.json_encode($actions).';';
                 echo 'let json = '.json_encode($series).';';
             echo '</script>';
@@ -867,7 +869,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     background-color: #4177c1;
                 }
 
-                table.child {
+                .responses-list {
                     background-color: #42424a !important;
                     table-layout: auto;
                     margin: 0 auto !important;
@@ -879,6 +881,20 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding-left: 40px;
                     padding-right: 40px;
                     cursor: default !important;
+                }
+
+                table.child {
+                    table-layout: auto;
+                    cursor: default !important;
+                }
+
+
+
+                table.child thead tr td{
+                    text-transform: uppercase;
+                    border-top: 1px solid #333 !important;
+                    color: #9d9d9d !important;
+                    font-size: 11px;
                 }
 
                 table.child tr {
@@ -897,7 +913,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     color: white !important;
                     border: none;
                     font-size: 14px;
-                    padding: 13px;
+                    padding: 10px;
                     cursor: default !important;
                 }
 
@@ -931,22 +947,23 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 table.child tr td.button-column, table.child tr td.button-column-add{
                     padding-left: 20px;
-                    width:80px;
+                    min-width:100px;
                 }
 
                 table.child tr td.date-column {
-                    padding-left: 20px;
+                    padding-left: 10px;
                     width:100px;
                 }
 
-                table.child tr td.name-column {
-                    padding: 20px 20px 10px;
+                .name-column {
+                    padding: 20px;
                     width:auto;
                     font-size: 16px;
                     line-height: 20px;
+                    color: white;
                 }
 
-                table.child tr td.name-column i {
+                .name-column i {
                     font-size: 12px;
                     line-height: 12px;
                     margin-left: 5px;
@@ -960,12 +977,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     font-size: 13px;
                     line-height: 16px;
                     color: #999999 !important;
-                }
-
-                table.child tr td.id-column {
-                    color: #999999 !important;
-                    font-style: italic;
-                    font-size: 13px;
                 }
 
                 table.child tr td.button-column a {
@@ -982,6 +993,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     font-style: italic;
                     transition: color 0.2s;
                     color: white; 
+                    font-size: 12px;
                 }
 
                 table.child tr td.button-column-add a:hover {
@@ -1071,7 +1083,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                     cell = document.createElement('td');
                     cell.classList.add('id-column');
-                    cell.innerHTML = 'Response Id : ' + id;
+                    cell.innerHTML = id;
                     cell.setAttribute('colspan', 6);
                     row.appendChild(cell);
                     return row;
@@ -1079,18 +1091,33 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 };
 
                 function addName(name, geo1) {
-                    let row = document.createElement('tr');
-                    let cell = document.createElement('td');
-                    cell.classList.add('name-column');
-                    cell.setAttribute('colspan', 7);
-                    cell.innerHTML = name;
+                    let div = document.createElement('div');
+                    div.classList.add('name-column');
+                    div.innerHTML = name;
                     if(geo1) {
-                        cell.innerHTML += ' <i>' + geo1 + '</i>';
+                        div.innerHTML += ' <i>' + geo1 + '</i>';
                     }
-                    row.appendChild(cell);
-                    return row;
+                    return div;
                 };
 
+                function createHead(data) {
+                    let head = document.createElement('thead');
+                    let row = document.createElement('tr');
+                    head.appendChild(row);
+                    var cell = document.createElement('td');
+                    cell.classList.add('button-column-add');
+                    cell.innerHTML = "actions";
+                    row.appendChild(cell);
+                    cell = document.createElement('td');
+                    cell.classList.add('update');
+                    cell.innerHTML = "update";
+                    row.appendChild(cell);
+                    cell = document.createElement('td');
+                    cell.classList.add('response-id');
+                    cell.innerHTML = "response id";
+                    row.appendChild(cell);
+                    return head;
+                };
 
 
                 function addTableTile(child) {
@@ -1140,15 +1167,18 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     // Open this row
                     let jsonData = json[uoid];
                     if (jsonData.child != null) {
+                        let div = document.createElement('div');
+                        div.classList.add('responses-list');
+                        div.appendChild(addName(data.data_MoSD2, data.data_GEO1));
                         let element = document.createElement('table');
                         element.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
-                        element.appendChild(addName(data.data_MoSD2, data.data_GEO1));
-                        element.appendChild(addTableTile(jsonData.child.length));
+                        element.appendChild(createHead(data));
                         element.appendChild(addNewReponse(data.data_Update, jsonData.urls));
                         for (var child of jsonData.child) {
                             element.appendChild(format(child.data.Update, child.data.id, child.urls));
                         };
-                        row.child(element).show();
+                        div.appendChild(element);
+                        row.child(div).show();
                         tr.addClass('shown');
                     }
                 } );
