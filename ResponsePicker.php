@@ -486,7 +486,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             if (!empty($template)) {
                 $gridColumns['actions'] = [
-                    'header' => 'Actions',
+                    'header' => 'actions',
                     'visible' => false,
                     'htmlOptions' => [
                         'width' => '100px',
@@ -551,30 +551,35 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 ];
             }
 
-            foreach($result as $row) {
-                $uoid = $row['data']['UOID'];
-                $row['uoid'] = $uoid;
-                if(array_key_exists('Update',$row['data'])) {
-                    $row['data']['Update'] = date('Y-m-d',strtotime($row['data']['Update']));
+            foreach($result as $item) {
+                $uoid = $item['data']['UOID'];
+                $item['uoid'] = $uoid;
+                if(array_key_exists('Update',$item['data'])) {
+                    $item['data']['Update'] = date('Y-m-d',strtotime($item['data']['Update']));
                 }
 
                 if (!isset($series[$uoid])) {
-                    $series[$uoid] = $row;
+                    $series[$uoid] = $item;
                 } 
                 
-                if($series[$uoid]['data']['id'] < $row['data']['id']) {
-                    $row['child'] = $series[$uoid]['child'];
-                    $row['child'][] = $row;
+                if($series[$uoid]['data']['id'] < $item['data']['id']) {
+                    $item['child'] = $series[$uoid]['child'];
+                    $item['child'][] = $item;
                     unset($series[$uoid]['child']);
-                    $series[$uoid] = $row;
-                } else $series[$uoid]['child'][] = $row;
+                    $series[$uoid] = $item;
+                } else $series[$uoid]['child'][] = $item;
                 $series[$uoid]['count'] = count($series[$uoid]['child']);
             }
 
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
-            $responsesColumns = ['update', 'response_id'];
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
+                if($parts[0] == "d") {
+                    $filteredKeys[$parts[1]] = true;
+                    array_shift($parts);
+                    array_pop($parts);
+                }
+                
                 list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
@@ -611,12 +616,18 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ];
                 }
             }
-
-            $gridColumns['UOID'] = [
-                'name' => 'data.UOID',
-                'header' => 'UOID',
-                'filter' => false                
-            ];
+            
+            $responsesColumns['actions'] = ["name" => "actions", "header" => "actions", "filter"=>"text","value" => ""];
+            $responsesColumns['Update'] = ["name" => "update", "header" => "update", "filter"=>"text","value" => ""];
+            $responsesColumns['id'] = ["name" => "response_id", "header" => "Response id", "filter"=>"text","value" => ""];
+            if($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns,$filteredKeys));
+            if(!array_key_exists('UOID')) {   
+                $gridColumns['UOID'] = [
+                    'name' => 'data.UOID',
+                    'header' => 'UOID',
+                    'filter' => false            
+                ];
+            }
 
             foreach ($columns as $column => $dummy) {
                 if (substr($column, 0, 4) == 'DISP') {
@@ -883,9 +894,21 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     cursor: default !important;
                 }
 
-                table.child {
-                    table-layout: auto;
+                .table table.child {
+                    table-layout: auto !important;
                     cursor: default !important;
+                    background-color: #42424a;
+                    width: auto;
+                    min-width: 50%;
+                }
+                .table table.child td {
+                    width: auto;
+                    white-space:nowrap;
+                }
+
+                .table table.child.hasConfigurableColumns {
+                    width: 100%;
+                    table-layout: auto !important;
                 }
 
 
@@ -913,7 +936,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     color: white !important;
                     border: none;
                     font-size: 14px;
-                    padding: 10px;
+                    padding: 10px 20px;
                     cursor: default !important;
                 }
 
@@ -939,20 +962,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 table.child tr td table {
                     padding: 0;
-                }
-                
-                table.child tr td:first-child {
-                    width: 10px;
-                }
-
-                table.child tr td.button-column, table.child tr td.button-column-add{
-                    padding-left: 20px;
-                    min-width:100px;
-                }
-
-                table.child tr td.date-column {
-                    padding-left: 10px;
-                    width:100px;
                 }
 
                 .name-column {
@@ -1040,13 +1049,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                 })
 
-                function format(update, id, urls) {
-
-                    let row = document.createElement('tr');
-                    row.classList.add('response');
-                    var cell = document.createElement('td');
+                function createActions(cell, urls) {
                     cell.classList.add('button-column');
-                    row.appendChild(cell);
                     var link;
                     if(actions.view) {
                         link = document.createElement('a');
@@ -1076,16 +1080,25 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         cell.appendChild(link);
                     }
                     
-                    cell = document.createElement('td');
-                    cell.classList.add('date-column');
-                    cell.innerHTML = update;
-                    row.appendChild(cell);
+                    return cell;
+                }
 
-                    cell = document.createElement('td');
-                    cell.classList.add('id-column');
-                    cell.innerHTML = id;
-                    cell.setAttribute('colspan', 6);
-                    row.appendChild(cell);
+                function format(rowData, childData, urls) {
+
+                    let row = document.createElement('tr');
+                    row.classList.add('response');
+                    for(let column in columns) {
+                        var cell = document.createElement('td');
+                        if(column == "actions") createActions(cell, urls);
+                        else { 
+                            if(column == "id") 
+                                cell.innerHTML = childData[column];
+                            else 
+                                cell.innerHTML = rowData['data_'+column];
+                            cell.classList.add(columns[column].name+'-column');
+                        }
+                        row.appendChild(cell);
+                    }
                     return row;
                     
                 };
@@ -1104,59 +1117,48 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     let head = document.createElement('thead');
                     let row = document.createElement('tr');
                     head.appendChild(row);
-                    var cell = document.createElement('td');
-                    cell.classList.add('button-column-add');
-                    cell.innerHTML = "actions";
-                    row.appendChild(cell);
-                    cell = document.createElement('td');
-                    cell.classList.add('update');
-                    cell.innerHTML = "update";
-                    row.appendChild(cell);
-                    cell = document.createElement('td');
-                    cell.classList.add('response-id');
-                    cell.innerHTML = "response id";
-                    row.appendChild(cell);
+                    for(let i in columns) {
+                        var cell = document.createElement('td');
+                        cell.classList.add(columns[i].name+'-column');
+                        cell.innerHTML = columns[i].header.split(':')[0];
+                        row.appendChild(cell);
+                    }
                     return head;
                 };
 
-
-                function addTableTile(child) {
-                    let row = document.createElement('tr');
-                    let cell = document.createElement('td');
-                    cell.classList.add('title-column');
-                    cell.setAttribute('colspan', 7);
-                    cell.textContent = "List of responses ("+child+")";
-                    row.appendChild(cell);
-                    return row;
-                };
-
                 function addNewReponse(update, urls) {
-                    let row = document.createElement('tr');
+                    let row = document.createElement('tr')
                     let cell = document.createElement('td');
                     cell.classList.add('button-column-add');
-                    cell.setAttribute('colspan', 7);
-                    
-                    if(actions.repeat) {
-                        let link = document.createElement('a');
-                        link.setAttribute('title', actions.repeat.options.title);
-                        link.setAttribute('data-confirm', actions.repeat.options['data-confirm']);
-                        link.setAttribute('data-method', actions.repeat.options['data-method']);
-                        link.setAttribute('data-body', actions.repeat.options['data-body']);
-                        link.setAttribute('href', urls.copy);
-                        link.innerHTML = actions.repeat.label+" Add a response";
-                        cell.appendChild(link);
-                        row.appendChild(cell);
-                    }
+                    cell.setAttribute('colspan', Object.keys(columns).length);
+                    let link = document.createElement('a');
+                    link.setAttribute('title', actions.repeat.options.title);
+                    link.setAttribute('data-confirm', actions.repeat.options['data-confirm']);
+                    link.setAttribute('data-method', actions.repeat.options['data-method']);
+                    link.setAttribute('data-body', actions.repeat.options['data-body']);
+                    link.setAttribute('href', urls.copy);
+                    link.innerHTML = actions.repeat.label+" Add a response";
+                    cell.appendChild(link);
+                    row.appendChild(cell);
+                
                     return row;
                 };
                 
 
-                var table = $('#DataTables_Table_0').dataTable();
-                var api = table.api();
+                let table = $('#DataTables_Table_0').dataTable();
+                let api = table.api();
+                
+                let columnnames = api.settings().init().columns;
+                for (var column in columns) {
+                    if(column != "Update"){
+                        let columnFound = columnnames.find(element => element.name == "data_"+column);
+                        api.column(columnnames.indexOf(columnFound)).visible(false);
+                    }
+                }
                 table.on('click', 'tr', function () {
                     var tr = $(this).closest('tr');
                     var row = api.row( tr );
-                    var data = row.data();
+                    var rowData = row.data();
                     let uoid = $(tr).attr('id');
                     if(!uoid) return;
                     if (row.child.isShown()) {
@@ -1169,15 +1171,17 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     if (jsonData.child != null) {
                         let div = document.createElement('div');
                         div.classList.add('responses-list');
-                        div.appendChild(addName(data.data_MoSD2, data.data_GEO1));
-                        let element = document.createElement('table');
-                        element.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
-                        element.appendChild(createHead(data));
-                        element.appendChild(addNewReponse(data.data_Update, jsonData.urls));
+                        div.appendChild(addName(rowData.data_MoSD2, rowData.data_GEO1));
+                        let tableElement = document.createElement('table');
+                        if(Object.keys(columns).length > 3)
+                            tableElement.classList.add('hasConfigurableColumns');
+                        tableElement.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
+                        tableElement.appendChild(createHead(rowData));
+                        if(actions.repeat) tableElement.appendChild(addNewReponse(rowData.data_Update, jsonData.urls));
                         for (var child of jsonData.child) {
-                            element.appendChild(format(child.data.Update, child.data.id, child.urls));
+                            tableElement.appendChild(format(rowData, child.data, child.urls));
                         };
-                        div.appendChild(element);
+                        div.appendChild(tableElement);
                         row.child(div).show();
                         tr.addClass('shown');
                     }
