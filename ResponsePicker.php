@@ -562,12 +562,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     $series[$uoid] = $item;
                 } 
                 
-                if($series[$uoid]['data']['id'] < $item['data']['id']) {
+                //if($series[$uoid]['data']['id'] < $item['data']['id']) {
+                if($series[$uoid]['data']['Update'] < $item['data']['Update']) {
                     $item['child'] = $series[$uoid]['child'];
                     $item['child'][] = $item;
                     unset($series[$uoid]['child']);
                     $series[$uoid] = $item;
                 } else $series[$uoid]['child'][] = $item;
+                $series[$uoid."_".$item['data']['id']] = $item;
                 $series[$uoid]['count'] = count($series[$uoid]['child']);
             }
 
@@ -678,7 +680,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             echo '<script>';
                 echo 'let columns = '.json_encode($responsesColumns).';';
                 echo 'let actions = '.json_encode($actions).';';
-                echo 'let json = '.json_encode($series).';';
             echo '</script>';
             echo '</body></html>';
             die();
@@ -1091,10 +1092,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         var cell = document.createElement('td');
                         if(column == "actions") createActions(cell, urls);
                         else { 
-                            if(column == "id") 
-                                cell.innerHTML = childData[column];
-                            else 
-                                cell.innerHTML = rowData['data_'+column];
+                            cell.innerHTML = childData["data_"+column];
                             cell.classList.add(columns[column].name+'-column');
                         }
                         row.appendChild(cell);
@@ -1179,7 +1177,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         tableElement.appendChild(createHead(rowData));
                         if(actions.repeat) tableElement.appendChild(addNewReponse(rowData.data_Update, jsonData.urls));
                         for (var child of jsonData.child) {
-                            tableElement.appendChild(format(rowData, child.data, child.urls));
+                             tableElement.appendChild(format(rowData, child, child.urls));
                         };
                         div.appendChild(tableElement);
                         row.child(div).show();
