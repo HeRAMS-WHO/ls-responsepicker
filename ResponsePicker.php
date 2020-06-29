@@ -47,7 +47,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
         public function init()
         {
-            die('Test version!');
             $this->subscribe('beforeLoadResponse');
             // Provides survey specific settings.
             $this->subscribe('beforeSurveySettings');
