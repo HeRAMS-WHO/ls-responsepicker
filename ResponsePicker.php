@@ -462,10 +462,31 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             if ($this->deleteEnabled($sid)) {
                 $template[] = '{delete}';
             }
+            
+
+            $gridColumns['control'] = [
+                'name' => '',
+                'header' => '',
+                'htmlOptions' => [
+                    'class' => 'open',
+                    'width' => '20px',
+                ],
+                'filter' => false
+            ];
+
+            $gridColumns['count'] = [
+                'name' => 'count',
+                'header' => '# Responses',
+                'htmlOptions' => [
+                    'width' => '20px',
+                ],
+                'filter' => false
+            ];
 
             if (!empty($template)) {
                 $gridColumns['actions'] = [
-                    'header' => 'Actions',
+                    'header' => 'actions',
+                    'visible' => false,
                     'htmlOptions' => [
                         'width' => '100px',
                     ],
@@ -497,7 +518,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Update response',
+                                'title' => 'Add a new response',
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -528,29 +549,38 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ]
                 ];
             }
-            $series = [];
-            foreach($result as $row) {
-                $id = $row['data']['UOID'];
-                if (!isset($series[$id])) {
-                    $series[$id] = $row['data']['id'];
-                } else {
-                    $series[$id] = max($series[$id], $row['data']['id']);
+
+            foreach($result as $item) {
+                $uoid = $item['data']['UOID'];
+                $item['uoid'] = $uoid;
+                if(array_key_exists('Update',$item['data'])) {
+                    $item['data']['Update'] = date('Y-m-d',strtotime($item['data']['Update']));
                 }
+
+                if (!isset($series[$uoid])) {
+                    $series[$uoid] = $item;
+                } 
+                
+                //if($series[$uoid]['data']['id'] < $item['data']['id']) {
+                if($series[$uoid]['data']['Update'] < $item['data']['Update']) {
+                    $item['child'] = $series[$uoid]['child'];
+                    $item['child'][] = $item;
+                    unset($series[$uoid]['child']);
+                    $series[$uoid] = $item;
+                } else $series[$uoid]['child'][] = $item;
+                $series[$uoid."_".$item['data']['id']] = $item;
+                $series[$uoid]['count'] = count($series[$uoid]['child']);
             }
 
-            foreach($result as &$row) {
-                $id = $row['data']['UOID'];
-                $row['final'] = ($series[$id] === $row['data']['id']) ? "True" : "False";
-            }
-
-            $gridColumns['final'] = [
-                'name' => 'final',
-                'header' => 'Last',
-                'filter' => 'select-strict'
-            ];
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
+                if($parts[0] == "d") {
+                    $filteredKeys[$parts[1]] = true;
+                    array_shift($parts);
+                    array_pop($parts);
+                }
+                
                 list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
@@ -587,7 +617,18 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ];
                 }
             }
-
+            
+            $responsesColumns['actions'] = ["name" => "actions", "header" => "actions", "filter"=>"text","value" => ""];
+            $responsesColumns['Update'] = ["name" => "update", "header" => "update", "filter"=>"text","value" => ""];
+            $responsesColumns['id'] = ["name" => "response_id", "header" => "Response id", "filter"=>"text","value" => ""];
+            if($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns,$filteredKeys));
+            if(!array_key_exists('UOID')) {   
+                $gridColumns['UOID'] = [
+                    'name' => 'data.UOID',
+                    'header' => 'UOID',
+                    'filter' => false            
+                ];
+            }
 
             foreach ($columns as $column => $dummy) {
                 if (substr($column, 0, 4) == 'DISP') {
@@ -610,7 +651,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             \Yii::import('zii.widgets.grid.CGridView');
 
             echo Yii::app()->controller->widget(SamIT\Yii1\DataTables\DataTable::class, [
-                'dataProvider' => new CArrayDataProvider($result, [
+                'dataProvider' => new CArrayDataProvider($series, [
                     'pagination' => [
                         'pageSize' => 10,
                     ],
@@ -629,6 +670,16 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 
             ], true);
             $this->registerClientScript(Yii::app()->clientScript);
+            $actions = $gridColumns['actions']['buttons'];
+            $template = explode(' ',$gridColumns['actions']['template']);
+            foreach($gridColumns['actions']['buttons'] as $key => $action) {
+                if(!in_array('{'.$key.'}',$template))
+                    $actions[$key] = null;
+            }
+            echo '<script>';
+                echo 'let columns = '.json_encode($responsesColumns).';';
+                echo 'let actions = '.json_encode($actions).';';
+            echo '</script>';
             echo '</body></html>';
             die();
         }
@@ -657,13 +708,21 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $clientScript->registerScriptFile("$bowerPath/bootbox/bootbox.js");
 
             $clientScript->registerCss('select', implode("\n", [
-                '.datatable-view { padding-top: 16px;}',
-                'table { -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; }',
-                'html {
-                    border:none;
+                '.datatable-view {
+                    padding-top: 16px;
                 }
+
+                table {
+                    -webkit-border-horizontal-spacing: 0px;
+                    -webkit-border-vertical-spacing: 0px;
+                }
+
+                html {
+                    border: none;
+                }
+
                 body {
-                    border:none;
+                    border: none;
                     --primary-button-background-color: #4177c1;
                     --primary-button-color: white;
                     --main-background-color: #e0e0e0;
@@ -716,7 +775,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
 
                 .page-link {
-                    color:var(--primary-button-background-color);
+                    color: var(--primary-button-background-color);
                     font-size: 13px;
                 }
 
@@ -725,12 +784,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     height: 38px;
                 }
 
-                div.dataTables_wrapper div.dataTables_length label, div.dataTables_wrapper div.dataTables_info {
-                    font-size:12px;
+                div.dataTables_wrapper div.dataTables_length label,
+                div.dataTables_wrapper div.dataTables_info {
+                    font-size: 12px;
                 }
 
                 .dataTables_wrapper.container-fluid {
-                    margin:0;
+                    margin: 0;
                     padding: 0;
                 }
 
@@ -745,13 +805,210 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     padding: 10px;
                 }
 
-                .table tbody tr.odd td,
-                .table tbody tr.even td {
+                .table tbody tr {
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+
+                .table tbody tr:hover td {
+                    cursor: pointer;
+                    color:#5791e1;
+                    transition: color 0.2s;
+                }
+
+                .table tbody tr.shown td{
+                    color:#5791e1;
+                }
+
+                .table tbody tr.group {
+                    cursor: pointer;
+                    background-color: rgba(0, 0, 0, .05) !important;
+                }
+
+                .table tbody tr.group:hover {
+                    background-color: #ddd;
+                }
+
+                .table tbody tr.group td {
+                    color: #222222 !important;
                     padding: 10px 5px 10px 10px;
                     font-family: "Source Sans Pro";
-                    color: #222222;
                     vertical-align: middle;
                     font-size: 14px;
+                }
+
+
+                table.dataTable {
+                    padding: 0;
+                    margin: 0 !important;
+                    width: 100%;
+                    border: none;
+                    border-collapse: collapse;
+                    border-spacing: 0px;
+                    font-size: 14px;
+                }
+
+                .table td,
+                .table th {
+                    padding: 0;
+                }
+                
+                table tbody tr.odd td,
+                table tbody tr.even td {
+                    padding: 10px;
+                    position: relative;
+                }
+
+                table tbody tr td.open:first-child:before {
+                    top: 50%;
+                    left: 50%;
+                    height: 16px;
+                    width: 16px;
+                    margin-top: -10px;
+                    margin-left: -10px;
+                    display: block;
+                    position: absolute;
+                    color: white;
+                    border: 2px solid white;
+                    border-radius: 14px;
+                    box-shadow: 0 0 3px #444;
+                    box-sizing: content-box;
+                    text-align: center;
+                    text-indent: 0 !important;
+                    line-height: 14px;
+                    content: "+";
+                    background-color: #4177c1;
+                }
+
+                .responses-list {
+                    background-color: #42424a !important;
+                    table-layout: auto;
+                    margin: 0 auto !important;
+                    width: 99.5%;
+                    border-bottom: 3px solid #333333;
+                    border-top: 3px solid #5791e1;
+                    padding-top: 3px;
+                    padding-bottom: 50px;
+                    padding-left: 40px;
+                    padding-right: 40px;
+                    cursor: default !important;
+                }
+
+                .table table.child {
+                    table-layout: auto !important;
+                    cursor: default !important;
+                    background-color: #42424a;
+                    width: auto;
+                    min-width: 50%;
+                }
+                .table table.child td {
+                    width: auto;
+                    white-space:nowrap;
+                }
+
+                .table table.child.hasConfigurableColumns {
+                    width: 100%;
+                    table-layout: auto !important;
+                }
+
+
+
+                table.child thead tr td{
+                    text-transform: uppercase;
+                    border-top: 1px solid #333 !important;
+                    color: #9d9d9d !important;
+                    font-size: 11px;
+                }
+
+                table.child tr {
+                    background-color: #42424a !important;
+                    color: white;
+                    cursor: default !important;
+                    margin-left: 10px;
+                    padding-top: 10px;
+                }
+
+                table.child tr:hover {
+                    background-color: #42424a;
+                }
+
+                table.child tr td {
+                    color: white !important;
+                    border: none;
+                    font-size: 14px;
+                    padding: 10px 20px;
+                    cursor: default !important;
+                }
+
+                table.child tr.response td {
+                    border-top: 1px solid #333 !important;
+                }
+
+                table.child tr.response:last-child td {
+                    border-bottom: 1px solid #333 !important;
+                }
+
+                table.child tr td a .oi {
+                    display:inline-block;
+                }
+                table.child tr td a {
+                    color: white;
+                    padding-right: 5px;
+                }
+
+                table.child tr td a:hover {
+                    color: grey;
+                }
+
+                table.child tr td table {
+                    padding: 0;
+                }
+
+                .name-column {
+                    padding: 20px;
+                    width:auto;
+                    font-size: 16px;
+                    line-height: 20px;
+                    color: white;
+                }
+
+                .name-column i {
+                    font-size: 12px;
+                    line-height: 12px;
+                    margin-left: 5px;
+                    display:inline-block;
+                }
+
+
+                table.child tr td.title-column {
+                    padding-left: 20px;
+                    width:auto;
+                    font-size: 13px;
+                    line-height: 16px;
+                    color: #999999 !important;
+                }
+
+                table.child tr td.button-column a {
+                    margin-right: 7px;
+                }
+
+                table.child tr td.button-column a:last-child {
+                    margin-right: 0px;
+                }
+                table.child tr td.button-column-add {
+                    border-top: 1px solid #333;
+                }
+                table.child tr td.button-column-add a {
+                    font-style: italic;
+                    transition: color 0.2s;
+                    color: white; 
+                    font-size: 12px;
+                }
+
+                table.child tr td.button-column-add a:hover {
+                    text-decoration: none;
+                    color: #999999;
+                    transition: color 0.2s;
                 }'
             ]));
             
@@ -791,6 +1048,141 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                     
                 })
+
+                function createActions(cell, urls) {
+                    cell.classList.add('button-column');
+                    var link;
+                    if(actions.view) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.view.options.title);
+                        link.setAttribute('href', urls.read);
+                        link.innerHTML = actions.view.label;
+                        cell.appendChild(link);
+                    }
+                    
+                    if(actions.update) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.update.options.title);
+                        link.setAttribute('data-confirm', actions.update.options['data-confirm']);
+                        link.setAttribute('href', urls.update);
+                        link.innerHTML = actions.update.label;
+                        cell.appendChild(link);
+                    }
+
+                    if(actions.delete) {
+                        link = document.createElement('a');
+                        link.setAttribute('title', actions.delete.options.title);
+                        link.setAttribute('data-confirm', actions.delete.options['data-confirm']);
+                        link.setAttribute('data-method', actions.delete.options['data-method']);
+                        link.setAttribute('data-body', actions.delete.options['data-body']);
+                        link.setAttribute('href', urls.delete);
+                        link.innerHTML = actions.delete.label;
+                        cell.appendChild(link);
+                    }
+                    
+                    return cell;
+                }
+
+                function format(rowData, childData, urls) {
+
+                    let row = document.createElement('tr');
+                    row.classList.add('response');
+                    for(let column in columns) {
+                        var cell = document.createElement('td');
+                        if(column == "actions") createActions(cell, urls);
+                        else { 
+                            cell.innerHTML = childData["data_"+column];
+                            cell.classList.add(columns[column].name+'-column');
+                        }
+                        row.appendChild(cell);
+                    }
+                    return row;
+                    
+                };
+
+                function addName(name, geo1) {
+                    let div = document.createElement('div');
+                    div.classList.add('name-column');
+                    div.innerHTML = name;
+                    if(geo1) {
+                        div.innerHTML += ' <i>' + geo1 + '</i>';
+                    }
+                    return div;
+                };
+
+                function createHead(data) {
+                    let head = document.createElement('thead');
+                    let row = document.createElement('tr');
+                    head.appendChild(row);
+                    for(let i in columns) {
+                        var cell = document.createElement('td');
+                        cell.classList.add(columns[i].name+'-column');
+                        cell.innerHTML = columns[i].header.split(':')[0];
+                        row.appendChild(cell);
+                    }
+                    return head;
+                };
+
+                function addNewReponse(update, urls) {
+                    let row = document.createElement('tr')
+                    let cell = document.createElement('td');
+                    cell.classList.add('button-column-add');
+                    cell.setAttribute('colspan', Object.keys(columns).length);
+                    let link = document.createElement('a');
+                    link.setAttribute('title', actions.repeat.options.title);
+                    link.setAttribute('data-confirm', actions.repeat.options['data-confirm']);
+                    link.setAttribute('data-method', actions.repeat.options['data-method']);
+                    link.setAttribute('data-body', actions.repeat.options['data-body']);
+                    link.setAttribute('href', urls.copy);
+                    link.innerHTML = actions.repeat.label+" Add a response";
+                    cell.appendChild(link);
+                    row.appendChild(cell);
+                
+                    return row;
+                };
+                
+
+                let table = $('#DataTables_Table_0').dataTable();
+                let api = table.api();
+                
+                let columnnames = api.settings().init().columns;
+                for (var column in columns) {
+                    if(column != "Update"){
+                        let columnFound = columnnames.find(element => element.name == "data_"+column);
+                        api.column(columnnames.indexOf(columnFound)).visible(false);
+                    }
+                }
+                table.on('click', 'tr', function () {
+                    var tr = $(this).closest('tr');
+                    var row = api.row( tr );
+                    var rowData = row.data();
+                    let uoid = $(tr).attr('id');
+                    if(!uoid) return;
+                    if (row.child.isShown()) {
+                        row.child.hide();
+                        tr.removeClass('shown');
+                        return;
+                    } 
+                    // Open this row
+                    let jsonData = json[uoid];
+                    if (jsonData.child != null) {
+                        let div = document.createElement('div');
+                        div.classList.add('responses-list');
+                        div.appendChild(addName(rowData.data_MoSD2, rowData.data_GEO1));
+                        let tableElement = document.createElement('table');
+                        if(Object.keys(columns).length > 3)
+                            tableElement.classList.add('hasConfigurableColumns');
+                        tableElement.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
+                        tableElement.appendChild(createHead(rowData));
+                        if(actions.repeat) tableElement.appendChild(addNewReponse(rowData.data_Update, jsonData.urls));
+                        for (var child of jsonData.child) {
+                             tableElement.appendChild(format(rowData, child, child.urls));
+                        };
+                        div.appendChild(tableElement);
+                        row.child(div).show();
+                        tr.addClass('shown');
+                    }
+                } );
 
 JS
             );
