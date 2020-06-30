@@ -1092,6 +1092,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         if(column == "actions") createActions(cell, urls);
                         else { 
                             cell.innerHTML = childData["data_"+column];
+                            if(childData["data_"+column].includes(':'))
+                                cell.innerHTML = childData["data_"+column].split(':')[0];
+                            if(cell.innerHTML == 'No text found for') cell.innerHTML = 'no data';
                             cell.classList.add(columns[column].name+'-column');
                         }
                         row.appendChild(cell);
