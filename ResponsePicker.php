@@ -575,12 +575,10 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
             foreach($configuredColumns as $column) {
                 $parts = explode(':', $column);
-                if($parts[0] == "d") {
+                if(is_array($parts) && $parts[0] == "d") {
                     $filteredKeys[$parts[1]] = true;
                     array_shift($parts);
-                    array_pop($parts);
                 }
-                
                 list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
@@ -593,7 +591,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ]) as $answer) {
                         $answers[$answer->code] = $answer;
                     }
-
                     $gridColumns[$name] = [
                         'name' => "data.$name",
                         'header' => $title ?? $question->question,
@@ -617,12 +614,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ];
                 }
             }
-            
-            $responsesColumns['actions'] = ["name" => "actions", "header" => "actions", "filter"=>"text","value" => ""];
-            $responsesColumns['Update'] = ["name" => "update", "header" => "update", "filter"=>"text","value" => ""];
-            $responsesColumns['id'] = ["name" => "response_id", "header" => "Response id", "filter"=>"text","value" => ""];
-            if($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns,$filteredKeys));
-            if(!array_key_exists('UOID')) {   
+            if(!array_key_exists('UOID', $gridColumns)) {   
                 $gridColumns['UOID'] = [
                     'name' => 'data.UOID',
                     'header' => 'UOID',
@@ -670,6 +662,20 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 
             ], true);
             $this->registerClientScript(Yii::app()->clientScript);
+
+            $updateHeader = "Date of update";
+            if(array_key_exists('Update', $gridColumns)) {
+                $updateHeader = explode(':',$gridColumns['Update']['header'])[0];
+            }
+            $idHeader = "Response id";
+            if(array_key_exists('qid', $gridColumns)) {
+                $idHeader = explode(':',$gridColumns['qid']['header'])[0];
+            }
+            $responsesColumns['actions'] = ["name" => "actions", "header" => "Actions", "filter"=>"text","value" => ""];
+            $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter"=>"text","value" => ""];
+            $responsesColumns['id'] = ["name" => "responseId", "header" => $idHeader, "filter"=>"text","value" => ""];
+            if($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns,$filteredKeys));
+
             $actions = $gridColumns['actions']['buttons'];
             $template = explode(' ',$gridColumns['actions']['template']);
             foreach($gridColumns['actions']['buttons'] as $key => $action) {
@@ -1126,7 +1132,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     return head;
                 };
 
-                function addNewReponse(update, urls) {
+                function addNewReponse(urls) {
                     let row = document.createElement('tr')
                     let cell = document.createElement('td');
                     cell.classList.add('button-column-add');
@@ -1177,7 +1183,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             tableElement.classList.add('hasConfigurableColumns');
                         tableElement.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
                         tableElement.appendChild(createHead(rowData));
-                        if(actions.repeat) tableElement.appendChild(addNewReponse(rowData.data_Update, jsonData.urls));
+                        if(actions.repeat) tableElement.appendChild(addNewReponse(jsonData.urls));
                         for (var child of jsonData.child) {
                              tableElement.appendChild(format(rowData, child, child.urls));
                         };
