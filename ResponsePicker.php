@@ -226,6 +226,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             }
             // Responses to choose from.
             $responses = $this->event->get('responses');
+            $this->defaultLang = 'en';
+            if(is_array($responses) && count($responses) > 0)
+                $this->defaultLang = $responses[0]->attributes['startlanguage'];
             /**
              * @var LSHttpRequest
              */
@@ -436,11 +439,16 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
             $am = \Yii::app()->assetManager;
-            $lang = $this->get_browser_language();
+            $lang = $this->defaultLang;
+            //$lang = $this->get_browser_language();
             $trad['en']['No text found for'] = 'No text found for';
             $trad['fr']['No text found for'] = 'Pas de donnée pour';
             $trad['en']['Add a response'] = 'Add a response';
             $trad['fr']['Add a response'] = 'Ajouter une réponse';
+            $trad['en']['Response id'] = 'Response id';
+            $trad['fr']['Response id'] = 'ID de la réponse';
+            $trad['en']['Date of update'] = 'Date of update';
+            $trad['fr']['Date of update'] = 'Date de mise à jour';
             \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/vendor/bower-asset', false, -1);
 
             $new = array_pop($result);
@@ -590,6 +598,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     'title' => $name,
                     'language' => $lang
                 ]);
+                if (!isset($question)) {
+                    $question = Question::model()->findByAttributes([
+                        'sid' => $sid,
+                        'title' => $name,
+                        'language' => 'en'
+                    ]);
+                }
                 if (isset($question)) {
                     $answers = [];
                     foreach (Answer::model()->findAllByAttributes([
@@ -674,10 +689,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $updateHeader = "Date of update";
             if(array_key_exists('Update', $gridColumns)) {
                 $updateHeader = strpos($gridColumns['Update']['header'], ':') !== false ? explode(':',$gridColumns['Update']['header'])[0]:$gridColumns['Update']['header'];
+            } else {
+                $updateHeader = $trad[$lang]['Date of update'];
             }
             $idHeader = "Response id";
             if(array_key_exists('qid', $gridColumns)) {
                 $idHeader = strpos($gridColumns['qid']['header'], ':') !== false ? explode(':',$gridColumns['qid']['header'])[0]:$gridColumns['qid']['header'];
+            } else {
+                $idHeader = $trad[$lang]['Response id'];
             }
             $responsesColumns['actions'] = ["name" => "actions", "header" => "Actions", "filter"=>"text","value" => ""];
             $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter"=>"text","value" => ""];
@@ -1160,7 +1179,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     for(let i in columns) {
                         var cell = document.createElement('td');
                         cell.classList.add(columns[i].name+'-column');
-                        cell.innerHTML = columns[i].header.split(':')[0];
+                        cell.innerHTML = columns[i].header != null && columns[i].header.indexOf('-') ? columns[i].header.split(':')[0]: columns[i].header;
                         row.appendChild(cell);
                     }
                     return head;
