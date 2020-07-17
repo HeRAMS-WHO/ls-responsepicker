@@ -436,6 +436,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
             $am = \Yii::app()->assetManager;
+            $lang = $this->get_browser_language();
+            $trad['en']['No text found for'] = 'No text found for';
+            $trad['fr']['No text found for'] = 'Pas de donnée pour';
+            $trad['en']['Add a response'] = 'Add a response';
+            $trad['fr']['Add a response'] = 'Ajouter une réponse';
             \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/vendor/bower-asset', false, -1);
 
             $new = array_pop($result);
@@ -518,7 +523,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Add a new response',
+                                'title' => $trad[$lang]['Add a response'],
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -582,7 +587,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
-                    'title' => $name
+                    'title' => $name,
+                    'language' => $lang
                 ]);
                 if (isset($question)) {
                     $answers = [];
@@ -591,17 +597,19 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ]) as $answer) {
                         $answers[$answer->code] = $answer;
                     }
+                    $header = $title ?? $question->question;
+                    $header = strpos($header, ':') !== false ? explode(':',$header)[0]:$header;
                     $gridColumns[$name] = [
                         'name' => "data.$name",
-                        'header' => $title ?? $question->question,
+                        'header' => $header,
                         'filter' => empty($filter) ? false : $filter,
                     ];
                     if (isset($answers) && !empty($answers)) {
-                        $gridColumns[$name]['value'] = function ($row) use ($answers, $name) {
+                        $gridColumns[$name]['value'] = function ($row) use ($answers, $name, $lang, $trad) {
                             if (isset($answers[$row['data'][$name]])) {
                                 return $answers[$row['data'][$name]]->answer;
                             } else {
-                                return "No text found for: $name";
+                                return $trad[$lang]["No text found for"]." $name";
                             }
                         };
                     }
@@ -665,11 +673,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             $updateHeader = "Date of update";
             if(array_key_exists('Update', $gridColumns)) {
-                $updateHeader = explode(':',$gridColumns['Update']['header'])[0];
+                $updateHeader = strpos($gridColumns['Update']['header'], ':') !== false ? explode(':',$gridColumns['Update']['header'])[0]:$gridColumns['Update']['header'];
             }
             $idHeader = "Response id";
             if(array_key_exists('qid', $gridColumns)) {
-                $idHeader = explode(':',$gridColumns['qid']['header'])[0];
+                $idHeader = strpos($gridColumns['qid']['header'], ':') !== false ? explode(':',$gridColumns['qid']['header'])[0]:$gridColumns['qid']['header'];
             }
             $responsesColumns['actions'] = ["name" => "actions", "header" => "Actions", "filter"=>"text","value" => ""];
             $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter"=>"text","value" => ""];
@@ -688,6 +696,32 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             echo '</script>';
             echo '</body></html>';
             die();
+        }
+
+        /**
+        * Get browser language, given an array of avalaible languages.
+        * 
+        * @param  [array]   $availableLanguages  Avalaible languages for the site
+        * @param  [string]  $default             Default language for the site
+        * @return [string]                       Language code/prefix
+        */
+        public function get_browser_language( $available = [], $default = 'en' ) {
+            if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
+
+                $langs = explode( ',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] );
+
+            if ( empty( $available ) ) {
+            return $lang = substr( $langs[ 0 ], 0, 2 );
+            }
+
+                foreach ( $langs as $lang ){
+                    $lang = substr( $lang, 0, 2 );
+                    if( in_array( $lang, $available ) ) {
+                        return $lang;
+                    }
+                }
+            }
+            return $default;
         }
 
         /**
@@ -1143,7 +1177,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     link.setAttribute('data-method', actions.repeat.options['data-method']);
                     link.setAttribute('data-body', actions.repeat.options['data-body']);
                     link.setAttribute('href', urls.copy);
-                    link.innerHTML = actions.repeat.label+" Add a response";
+                    link.innerHTML = actions.repeat.label+" "+actions.repeat.options.title;
                     cell.appendChild(link);
                     row.appendChild(cell);
                 
