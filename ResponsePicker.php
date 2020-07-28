@@ -360,7 +360,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
         {
             $this->translation['en']['No text found for'] = 'No text found for';
             $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
-            $this->translation['ar']['No text found for'] = 'No text found for';
+            $this->translation['ar']['No text found for'] = 'لم يتم ايجاد نص ل';
             $this->translation['en']['Add a response'] = 'Add a response';
             $this->translation['fr']['Add a response'] = 'Ajouter une réponse';
             $this->translation['ar']['Add a response'] = 'اضف إجابة';
@@ -369,7 +369,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['ar']['Response id'] = 'رقم الاستجابة';
             $this->translation['en']['Date of update'] = 'Date of update';
             $this->translation['fr']['Date of update'] = 'Date de mise à jour';
-            $this->translation['ar']['Date of update'] = 'Date of update';
+            $this->translation['ar']['Date of update'] = 'تاريخ تحديث الإستبيان';
             $this->translation['en']['Actions'] = 'Actions';
             $this->translation['fr']['Actions'] = 'Actions';
             $this->translation['ar']['Actions'] = 'إجراءات';
