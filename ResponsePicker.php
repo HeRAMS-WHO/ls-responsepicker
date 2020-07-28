@@ -468,6 +468,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $surveyLang = getSurveyInfo($sid)['additional_languages'];
             //if there is a lang in the url we use it, or we use the browser lang
             $lang = $request->getParam('lang') !== null ? $request->getParam('lang') : $this->get_browser_language();
+            $lang = strpos($lang, '-') !== false ? explode('-',$lang)[0] : $lang;$lang = strpos($lang, '-') !== false ? explode('-',$lang)[0] : $lang;
+            $lang = strtolower($lang);
             $availableLanguages[] = $baseLang;
             if(is_array($surveyLang))
                 array_merge($availableLanguages,$surveyLang);
