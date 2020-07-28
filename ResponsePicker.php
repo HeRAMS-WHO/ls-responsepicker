@@ -370,10 +370,15 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
             $this->translation['en']['Add a response'] = 'Add a response';
             $this->translation['fr']['Add a response'] = 'Ajouter une réponse';
+            $this->translation['ar']['Add a response'] = 'اضف إجابة';
             $this->translation['en']['Response id'] = 'Response id';
             $this->translation['fr']['Response id'] = 'ID de la réponse';
+            $this->translation['ar']['Response id'] = 'رقم الاستجابة';
             $this->translation['en']['Date of update'] = 'Date of update';
             $this->translation['fr']['Date of update'] = 'Date de mise à jour';
+            $this->translation['en']['Actions'] = 'Actions';
+            $this->translation['fr']['Actions'] = 'Actions';
+            $this->translation['ar']['Actions'] = 'إجراءات';
         }
 
         protected function getTranslation($lang,$key) {
@@ -731,7 +736,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             } else {
                 $idHeader =  $this->getTranslation($this->language,'Response id');
             }
-            $responsesColumns['actions'] = ["name" => "actions", "header" => "Actions", "filter"=>"text","value" => ""];
+            $responsesColumns['actions'] = ["name" => "actions", "header" => $this->getTranslation($this->language,'Actions'), "filter"=>"text","value" => ""];
             $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter"=>"text","value" => ""];
             $responsesColumns['id'] = ["name" => "responseId", "header" => $idHeader, "filter"=>"text","value" => ""];
             if($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns,$filteredKeys));
