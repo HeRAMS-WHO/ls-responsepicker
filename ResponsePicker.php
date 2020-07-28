@@ -469,12 +469,12 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $lang = strpos($lang, '-') !== false ? explode('-', $lang)[0] : $lang;
             $lang = strtolower($lang);
             $availableLanguages[] = $baseLang;
-            if (is_array($surveyLang))
-                array_merge($availableLanguages, $surveyLang);
+            if (strpos($surveyLang, ' ') !== false)
+                $availableLanguages = array_merge($availableLanguages, explode(' ',$surveyLang));
             else if (!empty($surveyLang)) $availableLanguages[] = $surveyLang;
             $this->language = $baseLang;
             //if the survey has the language then we choose it 
-            if ((is_array($surveyLang) && in_array($lang, $surveyLang)) || ($surveyLang == $lang))
+            if (strpos($surveyLang, $lang) !== false)
                 $this->language = $lang;
 
             $this->setTranslations();
