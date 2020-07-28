@@ -226,6 +226,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             }
             // Responses to choose from.
             $responses = $this->event->get('responses');
+            $this->defaultLang = 'en';
+            if(is_array($responses) && count($responses) > 0)
+                $this->defaultLang = $responses[0]->attributes['startlanguage'];
             /**
              * @var LSHttpRequest
              */
@@ -356,13 +359,27 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         'current' => $this->get('deleteConfirmation', 'Survey', $event->get('survey')),
                         'help' => 'Leave empty for no confirmation'
                     ]
-
-
-
                 ],
             ];
             $event->set("surveysettings.{$this->id}", $settings);
 
+        }
+
+        protected function setTranslations() {
+            $this->translation['en']['No text found for'] = 'No text found for';
+            $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
+            $this->translation['en']['Add a response'] = 'Add a response';
+            $this->translation['fr']['Add a response'] = 'Ajouter une réponse';
+            $this->translation['en']['Response id'] = 'Response id';
+            $this->translation['fr']['Response id'] = 'ID de la réponse';
+            $this->translation['en']['Date of update'] = 'Date of update';
+            $this->translation['fr']['Date of update'] = 'Date de mise à jour';
+        }
+
+        protected function getTranslation($lang,$key) {
+            if(!array_key_exists($lang,$this->translation))
+                $lang = 'en';
+            return $this->translation[$lang][$key];
         }
 
         /**
@@ -414,6 +431,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 'id' => 'new',
                 'url' => $this->api->createUrl('survey/index', $params)
             ];
+
+            unset($params['ResponsePicker']);
+            unset($params['lang']);
+            $result[] = [
+                'id' => 'baseUrl',
+                'url' => $this->api->createUrl('survey/index', $params)
+            ];
             $this->renderHtml($result, $sid, $request);
         }
 
@@ -437,7 +461,25 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             /** @var CAssetManager $am */
             $am = \Yii::app()->assetManager;
             \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/vendor/bower-asset', false, -1);
+            
+            //we set the default language to the survey base language
+            $baseLang = getSurveyInfo($sid)['language'];
+            //we get all available languages for the survey
+            $surveyLang = getSurveyInfo($sid)['additional_languages'];
+            //if there is a lang in the url we use it, or we use the browser lang
+            $lang = $request->getParam('lang') !== null ? $request->getParam('lang') : $this->get_browser_language();
+            $availableLanguages[] = $baseLang;
+            if(is_array($surveyLang))
+                array_merge($availableLanguages,$surveyLang);
+            else if(!empty($surveyLang)) $availableLanguages[] = $surveyLang;
+            $this->language = $baseLang;
+            //if the survey has the language then we choose it 
+            if((is_array($surveyLang) && in_array($lang, $surveyLang)) || ($surveyLang == $lang))
+                $this->language = $lang;   
+            
+            $this->setTranslations();
 
+            $baseUrl = array_pop($result);   
             $new = array_pop($result);
             $columns = [];
             if (isset($result[0]['data'])) {
@@ -518,7 +560,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => 'Add a new response',
+                                'title' => $this->getTranslation($this->language,'Add a response'),
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -582,18 +624,22 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 list($name, $filter, $title) = array_pad($parts, 3, null);
                 $question = Question::model()->findByAttributes([
                     'sid' => $sid,
-                    'title' => $name
+                    'title' => $name,
+                    'language' => $this->language
                 ]);
                 if (isset($question)) {
                     $answers = [];
                     foreach (Answer::model()->findAllByAttributes([
                         'qid' => $question->qid,
+                        'language' => $this->language
                     ]) as $answer) {
                         $answers[$answer->code] = $answer;
                     }
+                    $header = $title ?? $question->question;
+                    $header = strpos($header, ':') !== false ? explode(':',$header)[0]:$header;
                     $gridColumns[$name] = [
                         'name' => "data.$name",
-                        'header' => $title ?? $question->question,
+                        'header' => $header,
                         'filter' => empty($filter) ? false : $filter,
                     ];
                     if (isset($answers) && !empty($answers)) {
@@ -601,7 +647,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             if (isset($answers[$row['data'][$name]])) {
                                 return $answers[$row['data'][$name]]->answer;
                             } else {
-                                return "No text found for: $name";
+                                return $this->getTranslation($this->language,'No text found for')." $name";
                             }
                         };
                     }
@@ -636,6 +682,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             echo '<html><title></title>';
 
             echo '<body style="padding: 20px;">';
+            if(count($availableLanguages) > 1) {
+            echo "<select id='languagePicker' class='form-control' onChange='changeLanguage();'>";
+                foreach($availableLanguages as $lang) {
+                    $state = $lang == $this->language ? 'selected':'';
+                    echo "<option value='{$baseUrl['url']}&lang={$lang}' {$state}>{$lang}</option>";
+                }
+                echo "</select>";
+            }
             if ($this->get('create', 'Survey', $sid)) {
                 echo \CHtml::link($this->get('newheader', 'Survey', $sid, "New response"), $new['url'],
                     ['class' => 'btn btn-primary']);
@@ -665,11 +719,15 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             $updateHeader = "Date of update";
             if(array_key_exists('Update', $gridColumns)) {
-                $updateHeader = explode(':',$gridColumns['Update']['header'])[0];
+                $updateHeader = strpos($gridColumns['Update']['header'], ':') !== false ? explode(':',$gridColumns['Update']['header'])[0]:$gridColumns['Update']['header'];
+            } else {
+                $updateHeader = $this->getTranslation($this->language,'Date of update');
             }
             $idHeader = "Response id";
             if(array_key_exists('qid', $gridColumns)) {
-                $idHeader = explode(':',$gridColumns['qid']['header'])[0];
+                $idHeader = strpos($gridColumns['qid']['header'], ':') !== false ? explode(':',$gridColumns['qid']['header'])[0]:$gridColumns['qid']['header'];
+            } else {
+                $idHeader =  $this->getTranslation($this->language,'Response id');
             }
             $responsesColumns['actions'] = ["name" => "actions", "header" => "Actions", "filter"=>"text","value" => ""];
             $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter"=>"text","value" => ""];
@@ -683,11 +741,42 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     $actions[$key] = null;
             }
             echo '<script>';
+                echo "function changeLanguage() {
+                    let lp = document.getElementById('languagePicker');
+                    let url = lp.options[lp.selectedIndex].value;
+                    document.location.href= url; 
+                }";
                 echo 'let columns = '.json_encode($responsesColumns).';';
                 echo 'let actions = '.json_encode($actions).';';
             echo '</script>';
             echo '</body></html>';
             die();
+        }
+
+        /**
+        * Get browser language, given an array of avalaible languages.
+        * 
+        * @param  [array]   $availableLanguages  Avalaible languages for the site
+        * @param  [string]  $default             Default language for the site
+        * @return [string]                       Language code/prefix
+        */
+        public function get_browser_language( $available = [], $default = 'en' ) {
+            if ( isset( $_SERVER[ 'HTTP_ACCEPT_LANGUAGE' ] ) ) {
+
+                $langs = explode( ',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] );
+
+            if ( empty( $available ) ) {
+            return $lang = substr( $langs[ 0 ], 0, 2 );
+            }
+
+                foreach ( $langs as $lang ){
+                    $lang = substr( $lang, 0, 2 );
+                    if( in_array( $lang, $available ) ) {
+                        return $lang;
+                    }
+                }
+            }
+            return $default;
         }
 
         /**
@@ -739,6 +828,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     color: #5791e1;
                 }
 
+                select {
+                    margin: 0 auto;
+                    max-width: 150px;
+                }
+                
                 .btn {
                     cursor: pointer;
                     padding: 8px 12px;
@@ -1126,7 +1220,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     for(let i in columns) {
                         var cell = document.createElement('td');
                         cell.classList.add(columns[i].name+'-column');
-                        cell.innerHTML = columns[i].header.split(':')[0];
+                        cell.innerHTML = columns[i].header != null && columns[i].header.indexOf('-') ? columns[i].header.split(':')[0]: columns[i].header;
                         row.appendChild(cell);
                     }
                     return head;
@@ -1143,7 +1237,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     link.setAttribute('data-method', actions.repeat.options['data-method']);
                     link.setAttribute('data-body', actions.repeat.options['data-body']);
                     link.setAttribute('href', urls.copy);
-                    link.innerHTML = actions.repeat.label+" Add a response";
+                    link.innerHTML = actions.repeat.label+" "+actions.repeat.options.title;
                     cell.appendChild(link);
                     row.appendChild(cell);
                 
