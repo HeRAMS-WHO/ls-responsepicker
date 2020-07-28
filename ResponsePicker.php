@@ -460,7 +460,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
             $am = \Yii::app()->assetManager;
-            \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/../vendor/bower-asset', false, -1);
+            \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/vendor/bower-asset', false, -1);
             
             //we set the default language to the survey base language
             $baseLang = getSurveyInfo($sid)['language'];
