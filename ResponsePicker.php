@@ -460,16 +460,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
             $am = \Yii::app()->assetManager;
+            \Yii::app()->params['bower-asset'] = $am->publish(__DIR__ . '/../vendor/bower-asset', false, -1);
+            
             //we set the default language to the survey base language
             $baseLang = getSurveyInfo($sid)['language'];
             //we get all available languages for the survey
             $surveyLang = getSurveyInfo($sid)['additional_languages'];
             //if there is a lang in the url we use it, or we use the browser lang
             $lang = $request->getParam('lang') !== null ? $request->getParam('lang') : $this->get_browser_language();
-            /*echo "survey base language : ".getSurveyInfo($sid)['language'].'<br/>';
-            echo "additional avail. languages : ".$surveyLang.'<br/>';
-            echo "from url : ".$request->getParam('lang').'<br/>';
-            echo "from user browser : ".$this->get_browser_language().'<br/>';*/
             $availableLanguages[] = $baseLang;
             if(is_array($surveyLang))
                 array_merge($availableLanguages,$surveyLang);
@@ -478,8 +476,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             //if the survey has the language then we choose it 
             if((is_array($surveyLang) && in_array($lang, $surveyLang)) || ($surveyLang == $lang))
                 $this->language = $lang;   
-            //echo "chosen : ".$this->language;
-
+            
             $this->setTranslations();
 
             $baseUrl = array_pop($result);   
