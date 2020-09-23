@@ -361,9 +361,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['en']['No text found for'] = 'No text found for';
             $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
             $this->translation['ar']['No text found for'] = 'لم يتم ايجاد نص ل';
-            $this->translation['en']['Add a response'] = 'Add a response';
-            $this->translation['fr']['Add a response'] = 'Ajouter une réponse';
-            $this->translation['ar']['Add a response'] = 'اضف إجابة';
+            $this->translation['en']['Add a new response'] = 'Add a new response';
+            $this->translation['fr']['Add a new response'] = 'Ajouter une réponse';
+            $this->translation['ar']['Add a new response'] = 'اضف إجابة';
             $this->translation['en']['Response id'] = 'Response id';
             $this->translation['fr']['Response id'] = 'ID de la réponse';
             $this->translation['ar']['Response id'] = 'رقم الاستجابة';
@@ -506,7 +506,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             }
 
 
-            $gridColumns['control'] = [
+            /*$gridColumns['control'] = [
                 'name' => '',
                 'header' => '',
                 'htmlOptions' => [
@@ -514,7 +514,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     'width' => '20px',
                 ],
                 'filter' => false
-            ];
+            ];*/
 
             $gridColumns['count'] = [
                 'name' => 'count',
@@ -560,7 +560,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => $this->getTranslation($this->language, 'Add a response'),
+                                'title' => $this->getTranslation($this->language, 'Add a new response'),
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -602,16 +602,20 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 if (!isset($series[$uoid])) {
                     $series[$uoid] = $item;
                 }
+                else
+                { 
+                    if ($series[$uoid]['data']['Update'] < $item['data']['Update']) {
+                        $item['child'] = $series[$uoid]['child'];
+                        $item['child'][] = $item;
+                        unset($series[$uoid]['child']);
+                        $series[$uoid] = $item;
+                    } 
+                    else 
+                        $series[$uoid]['child'][] = $item;
+                }
 
-                //if($series[$uoid]['data']['id'] < $item['data']['id']) {
-                if ($series[$uoid]['data']['Update'] < $item['data']['Update']) {
-                    $item['child'] = $series[$uoid]['child'];
-                    $item['child'][] = $item;
-                    unset($series[$uoid]['child']);
-                    $series[$uoid] = $item;
-                } else $series[$uoid]['child'][] = $item;
                 $series[$uoid . "_" . $item['data']['id']] = $item;
-                $series[$uoid]['count'] = count($series[$uoid]['child']);
+                $series[$uoid]['count'] = count($series[$uoid]['child']) + 1;
             }
 
             $configuredColumns = explode("\r\n", $this->get('columns', 'Survey', $sid, ""));
@@ -640,8 +644,29 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     $gridColumns[$name] = [
                         'name' => "data.$name",
                         'header' => $header,
-                        'filter' => empty($filter) ? false : $filter,
+                        'filter' => empty($filter) || array_key_exists($name,$filteredKeys) ? false : $filter,
                     ];
+                    $advSettings = Question::model()->getAdvancedSettingsWithValues($question->qid, $question->type, $sid, $this->language);
+                    if($question->type == 'D' && isset($advSettings) && array_key_exists('date_format',$advSettings) && array_key_exists('value',$advSettings['date_format']) ) {                
+                        $dateFormat = $advSettings['date_format']['value'];
+                        $gridColumns[$name]['value'] = function ($row) use ($dateFormat, $name) {
+                            if(isset($dateFormat) && !empty($row['data'][$name])) {
+                                $formatArr = explode('-',$dateFormat);
+                                if(is_array($formatArr) && count($formatArr) > 0){
+                                    $dateFormat = "";
+                                    foreach($formatArr as $format) {
+                                        if(strpos($format, 'y') !== false)
+                                            $dateFormat .= strtoupper($format[0])."-";
+                                        else $dateFormat .= $format[0]."-";
+                                    }
+                                    $dateFormat = rtrim($dateFormat,'-');
+                                }
+                                $time = strtotime($row['data'][$name]);
+                                $row['data'][$name] = date($dateFormat,$time);
+                            }
+                            return $row['data'][$name];
+                        };
+                    }
                     if (isset($answers) && !empty($answers)) {
                         $gridColumns[$name]['value'] = function ($row) use ($answers, $name) {
                             if (isset($answers[$row['data'][$name]])) {
@@ -660,6 +685,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ];
                 }
             }
+            
+            foreach($filteredKeys as $key => $value) {
+                $gridColumns += array_splice($gridColumns,array_search($key,array_keys($gridColumns)),1);
+            }
+
             if (!array_key_exists('UOID', $gridColumns)) {
                 $gridColumns['UOID'] = [
                     'name' => 'data.UOID',
@@ -732,11 +762,12 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             } else {
                 $idHeader =  $this->getTranslation($this->language, 'Response id');
             }
-            $responsesColumns['actions'] = ["name" => "actions", "header" => $this->getTranslation($this->language, 'Actions'), "filter" => "text", "value" => ""];
-            $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter" => "text", "value" => ""];
-            $responsesColumns['id'] = ["name" => "responseId", "header" => $idHeader, "filter" => "text", "value" => ""];
-            if ($filteredKeys) $responsesColumns = array_merge($responsesColumns, array_intersect_key($gridColumns, $filteredKeys));
-
+            $responsesColumns = [];
+            $responsesColumns['actions'] = ["name" => "actions", "header" => $this->getTranslation($this->language, 'Actions'), "filter" => false];
+            $responsesColumns['Update'] = ["name" => 'update', "header" => $updateHeader, "filter" => false];
+            $responsesColumns['id'] = ["name" => "responseId", "header" => $idHeader, "filter" => false];
+            if ($filteredKeys) $responsesColumns = array_merge($responsesColumns,array_intersect_key($gridColumns, $filteredKeys));
+            
             $actions = $gridColumns['actions']['buttons'];
             $template = explode(' ', $gridColumns['actions']['template']);
             foreach ($gridColumns['actions']['buttons'] as $key => $action) {
@@ -923,6 +954,17 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     color:#5791e1;
                 }
 
+
+                table tbody tr.new td:nth-child(2):after, .table.new tbody tr:nth-child(2) td.update-column:after {
+                    content: "New";
+                    font-size: 11px;
+                    background: #60cb00;
+                    color: white;
+                    padding: 1px 6px 3px;
+                    margin-left: 15px;
+                    border-radius: 5px;
+                }
+
                 .table tbody tr.group {
                     cursor: pointer;
                     background-color: rgba(0, 0, 0, .05) !important;
@@ -960,27 +1002,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 table tbody tr.even td {
                     padding: 10px;
                     position: relative;
-                }
-
-                table tbody tr td.open:first-child:before {
-                    top: 50%;
-                    left: 50%;
-                    height: 16px;
-                    width: 16px;
-                    margin-top: -10px;
-                    margin-left: -10px;
-                    display: block;
-                    position: absolute;
-                    color: white;
-                    border: 2px solid white;
-                    border-radius: 14px;
-                    box-shadow: 0 0 3px #444;
-                    box-sizing: content-box;
-                    text-align: center;
-                    text-indent: 0 !important;
-                    line-height: 14px;
-                    content: "+";
-                    background-color: #4177c1;
                 }
 
                 .responses-list {
@@ -1025,18 +1046,12 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 table.child tr {
                     background-color: #42424a !important;
-                    color: white;
                     cursor: default !important;
                     margin-left: 10px;
                     padding-top: 10px;
                 }
 
-                table.child tr:hover {
-                    background-color: #42424a;
-                }
-
                 table.child tr td {
-                    color: white !important;
                     border: none;
                     font-size: 14px;
                     padding: 10px 20px;
@@ -1045,6 +1060,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
                 table.child tr.response td {
                     border-top: 1px solid #333 !important;
+                    color: grey;
+                }
+
+                table.child tr.response.enabled td {
+                    color: white;
                 }
 
                 table.child tr.response:last-child td {
@@ -1100,17 +1120,24 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
                 table.child tr td.button-column-add {
                     border-top: 1px solid #333;
+                    padding-top: 15px;
+                    padding-bottom: 15px;
                 }
                 table.child tr td.button-column-add a {
-                    font-style: italic;
+                    margin: 5px 0;
+                    font-style: normal;
                     transition: color 0.2s;
-                    color: white; 
                     font-size: 12px;
+                    color: white; 
+                    background: #5791e1;
+                    border-radius: 5px;
+                    padding: 5px 7px;
                 }
 
                 table.child tr td.button-column-add a:hover {
                     text-decoration: none;
-                    color: #999999;
+                    color: #5791e1; 
+                    background: white;
                     transition: color 0.2s;
                 }'
             ]));
@@ -1152,7 +1179,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     
                 })
 
-                function createActions(cell, urls) {
+                function createActions(cell, urls, showEditActions) {
                     cell.classList.add('button-column');
                     var link;
                     if(actions.view) {
@@ -1163,7 +1190,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         cell.appendChild(link);
                     }
                     
-                    if(actions.update) {
+                    if(actions.update && showEditActions) {
                         link = document.createElement('a');
                         link.setAttribute('title', actions.update.options.title);
                         link.setAttribute('data-confirm', actions.update.options['data-confirm']);
@@ -1172,7 +1199,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         cell.appendChild(link);
                     }
 
-                    if(actions.delete) {
+                    if(actions.delete && showEditActions) {
                         link = document.createElement('a');
                         link.setAttribute('title', actions.delete.options.title);
                         link.setAttribute('data-confirm', actions.delete.options['data-confirm']);
@@ -1186,14 +1213,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     return cell;
                 }
 
-                function format(rowData, childData, urls) {
-
+                function addResponseItem(childData, urls, isEnabled, showEditActions) {
                     let row = document.createElement('tr');
                     row.classList.add('response');
+                    if(isEnabled) row.classList.add('enabled');
                     for(let column in columns) {
                         var cell = document.createElement('td');
-                        if(column == "actions") createActions(cell, urls);
-                        else { 
+                        if(column == "actions") createActions(cell, urls, showEditActions);
+                        else if("data_"+column in childData) {
                             cell.innerHTML = childData["data_"+column];
                             if(childData["data_"+column].includes(':'))
                                 cell.innerHTML = childData["data_"+column].split(':')[0];
@@ -1229,11 +1256,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     return head;
                 };
 
-                function addNewReponse(urls) {
+                function addNewReponseButton(urls, colspan) {
                     let row = document.createElement('tr')
                     let cell = document.createElement('td');
                     cell.classList.add('button-column-add');
-                    cell.setAttribute('colspan', Object.keys(columns).length);
+                    cell.setAttribute('colspan', colspan);
                     let link = document.createElement('a');
                     link.setAttribute('title', actions.repeat.options.title);
                     link.setAttribute('data-confirm', actions.repeat.options['data-confirm']);
@@ -1260,6 +1287,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
                 table.on('click', 'tr', function () {
                     var tr = $(this).closest('tr');
+                    var isNew = $(tr).hasClass('new');
                     var row = api.row( tr );
                     var rowData = row.data();
                     let uoid = $(tr).attr('id');
@@ -1272,17 +1300,21 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     // Open this row
                     let jsonData = json[uoid];
                     if (jsonData.child != null) {
+                        let columnsCount = Object.keys(columns).length;
                         let div = document.createElement('div');
                         div.classList.add('responses-list');
                         div.appendChild(addName(rowData.data_MoSD2, rowData.data_GEO1));
                         let tableElement = document.createElement('table');
-                        if(Object.keys(columns).length > 3)
+                        if(columns != null && columnsCount > 3)
                             tableElement.classList.add('hasConfigurableColumns');
+                        if(isNew) tableElement.classList.add('new');
                         tableElement.classList.add('child', 'dataTable', 'table-bordered', 'table', 'table-striped', 'dataTable', 'no-footer');
                         tableElement.appendChild(createHead(rowData));
-                        if(actions.repeat) tableElement.appendChild(addNewReponse(jsonData.urls));
+                        let tableBody = document.createElement('tbody');
+                        tableElement.appendChild(tableBody);
+                        if(actions.repeat) tableBody.appendChild(addNewReponseButton(jsonData.urls, columnsCount));
                         for (var child of jsonData.child) {
-                             tableElement.appendChild(format(rowData, child, child.urls));
+                            tableBody.appendChild(addResponseItem(child, child.urls, child == jsonData.child[0], child == jsonData.child[0]));
                         };
                         div.appendChild(tableElement);
                         row.child(div).show();
