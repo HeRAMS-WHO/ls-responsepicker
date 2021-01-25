@@ -711,7 +711,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             echo '<html><title></title>';
 
-            echo '<body style="padding: 20px;">';
+            echo CHtml::tag('body', ['class' => $request->getQuery('seamless', 0) ? '' : 'seamless'], false, false);
+
             if (count($availableLanguages) > 1) {
                 echo "<select id='languagePicker' class='form-control' onChange='changeLanguage();'>";
                 foreach ($availableLanguages as $lang) {
@@ -841,8 +842,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 'defer' => true
             ]);
 
-            $clientScript->registerCss('select', implode("\n", [
-                '.datatable-view {
+            $clientScript->registerCss('select', <<<CSS
+                .datatable-view {
                     padding-top: 16px;
                 }
 
@@ -861,6 +862,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     --primary-button-color: white;
                     --main-background-color: #e0e0e0;
                     background-color: var(--main-background-color);
+                    padding: 20px;
                 }
 
                 a {
@@ -1144,8 +1146,21 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     color: #5791e1; 
                     background: white;
                     transition: color 0.2s;
-                }'
-            ]));
+                }
+
+                body.seamless {
+                    background-color: transparent;
+                    padding: 0;
+                    height: min-content;
+                }
+
+                body.seamless .datatable-view {
+                    padding: 0;
+                    border-radius: 0;
+                    margin: 0;
+                }
+CSS
+            );
 
             $clientScript->registerScript('confirm', <<<JS
                 $(document).on('click', 'a[data-confirm], a[data-method]', function(e) {
