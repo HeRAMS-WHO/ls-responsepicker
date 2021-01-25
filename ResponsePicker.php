@@ -304,7 +304,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ],
                     'view' => [
                         'type' => 'boolean',
-                        'label' => 'Enable view butfton: ',
+                        'label' => 'Enable view button: ',
                         'current' => $this->get('view', 'Survey', $event->get('survey'), 0)
                     ],
                     'delete' => [
@@ -720,7 +720,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 }
                 echo "</select>";
             }
-            if ($this->get('create', 'Survey', $sid)) {
+            if ($request->getQuery('createButton', 1) && $this->get('create', 'Survey', $sid)) {
                 echo \CHtml::link(
                     $this->get('newheader', 'Survey', $sid, "New response"),
                     $new['url'],
