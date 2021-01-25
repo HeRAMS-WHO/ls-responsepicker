@@ -711,7 +711,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             echo '<html><title></title>';
 
-            echo CHtml::tag('body', ['class' => $request->getQuery('seamless', 0) ? '' : 'seamless'], false, false);
+            echo CHtml::tag('body', ['class' => $request->getQuery('seamless', 0) ? 'seamless' : ''], false, false);
 
             if (count($availableLanguages) > 1) {
                 echo "<select id='languagePicker' class='form-control' onChange='changeLanguage();'>";
