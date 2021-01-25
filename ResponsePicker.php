@@ -836,6 +836,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             // Bootbox
             $clientScript->registerScriptFile("$bowerPath/bootbox/bootbox.js");
 
+            // Iframe resizer
+            $clientScript->registerScriptFile('https://unpkg.com/iframe-resizer@4.3.1/js/iframeResizer.contentWindow.min.js', CClientScript::POS_HEAD, [
+                'defer' => true
+            ]);
+
             $clientScript->registerCss('select', implode("\n", [
                 '.datatable-view {
                     padding-top: 16px;
