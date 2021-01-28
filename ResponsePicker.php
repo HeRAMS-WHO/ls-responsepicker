@@ -395,6 +395,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $token  = $request->getParam('token');
             $lang = $request->getParam('lang');
             $newtest = $request->getParam('newtest');
+            $createButton = $request->getParam('createButton');
+            $seamless = $request->getParam('seamless');
             $params = [
                 'ResponsePicker' => 'new',
             ];
@@ -424,18 +426,13 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                     ],
                 ];
             }
-            $result[] = [
-                'id' => 'new',
-                'url' => $this->api->createUrl('survey/index', $params)
-            ];
+            $newResponse = $this->api->createUrl('survey/index', $params);
 
             unset($params['ResponsePicker']);
             unset($params['lang']);
-            $result[] = [
-                'id' => 'baseUrl',
-                'url' => $this->api->createUrl('survey/index', $params)
-            ];
-            $this->renderHtml($result, $sid, $request);
+            $baseUrl = $this->api->createUrl('survey/index', array_filter($params));
+
+            $this->renderHtml($result, $newResponse, $baseUrl, $sid, $request);
         }
 
         protected function renderJson($result)
@@ -453,7 +450,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
          * @param $sid
          * @throws CException
          */
-        protected function renderHtml($result, $sid, \CHttpRequest $request)
+        protected function renderHtml($result, $newResponse, $baseUrl, $sid, \CHttpRequest $request)
         {
             Yii::app()->clientScript->reset();
             /** @var CAssetManager $am */
@@ -479,8 +476,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             $this->setTranslations();
 
-            $baseUrl = array_pop($result);
-            $new = array_pop($result);
             $columns = [];
             if (isset($result[0]['data'])) {
                 foreach ($result[0]['data'] as $key => $value) {
@@ -717,14 +712,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 echo "<select id='languagePicker' class='form-control' onChange='changeLanguage();'>";
                 foreach ($availableLanguages as $lang) {
                     $state = $lang == $this->language ? 'selected' : '';
-                    echo "<option value='{$baseUrl['url']}&lang={$lang}' {$state}>{$lang}</option>";
+                    echo "<option value='{$baseUrl}&lang={$lang}' {$state}>{$lang}</option>";
                 }
                 echo "</select>";
             }
             if ($request->getQuery('createButton', 1) && $this->get('create', 'Survey', $sid)) {
                 echo \CHtml::link(
                     $this->get('newheader', 'Survey', $sid, "New response"),
-                    $new['url'],
+                    $newResponse,
                     ['class' => 'btn btn-primary']
                 );
             }
