@@ -420,7 +420,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             unset($params['lang']);
             $baseUrl = $this->api->createUrl('survey/index', $params);
 
-            $this->renderHtml($result, $newResponse, $baseUrl, $sid, $request);
+            $this->renderHtml($result, $newResponse, $baseUrl, $params['sid'], $request);
         }
 
         protected function renderJson($result)
