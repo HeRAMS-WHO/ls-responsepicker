@@ -391,27 +391,15 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
          */
         protected function renderOptions($request, $responses)
         {
-            $sid = $request->getParam('sid');
-            $token  = $request->getParam('token');
-            $lang = $request->getParam('lang');
-            $newtest = $request->getParam('newtest');
-            $createButton = $request->getParam('createButton');
-            $seamless = $request->getParam('seamless');
-            $params = [
-                'ResponsePicker' => 'new',
-            ];
-            if (isset($sid)) {
-                $params['sid'] = $sid;
-            }
-            if (isset($token)) {
-                $params['token'] = $token;
-            }
-            if (isset($lang)) {
-                $params['lang'] = $lang;
-            }
-            if (isset($newtest)) {
-                $params['newtest'] = $newtest;
-            }
+            $params['sid'] = $request->getParam('sid');
+            $params['token'] = $request->getParam('token');
+            $params['lang'] = $request->getParam('lang');
+            $params['newtest'] = $request->getParam('newtest');
+            $params['createButton'] = $request->getParam('createButton');
+            $params['seamless'] = $request->getParam('seamless');
+            $params['ResponsePicker'] = 'new';
+
+            $params = array_filter($params);
 
             $result = [];
             foreach ($responses as $response) {
@@ -430,7 +418,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             unset($params['ResponsePicker']);
             unset($params['lang']);
-            $baseUrl = $this->api->createUrl('survey/index', array_filter($params));
+            $baseUrl = $this->api->createUrl('survey/index', $params);
 
             $this->renderHtml($result, $newResponse, $baseUrl, $sid, $request);
         }
