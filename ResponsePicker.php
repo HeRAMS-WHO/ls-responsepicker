@@ -395,8 +395,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $params['token'] = $request->getParam('token');
             $params['lang'] = $request->getParam('lang');
             $params['newtest'] = $request->getParam('newtest');
-            $params['createButton'] = $request->getParam('createButton');
-            $params['seamless'] = $request->getParam('seamless');
             $params['ResponsePicker'] = 'new';
 
             $params = array_filter($params);
@@ -476,15 +474,15 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                 $template[] = '{view}';
             }
 
-            if ($this->updateEnabled($sid)) {
+            if ($this->updateEnabled($sid) && $request->getQuery('editButton', 1)) {
                 $template[] = '{update}';
             }
 
-            if ($this->repeatEnabled($sid)) {
+            if ($this->repeatEnabled($sid) && $request->getQuery('copyButton', 1)) {
                 $template[] = '{repeat}';
             }
 
-            if ($this->deleteEnabled($sid)) {
+            if ($this->deleteEnabled($sid) && $request->getQuery('deleteButton', 1)) {
                 $template[] = '{delete}';
             }
 
