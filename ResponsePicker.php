@@ -55,6 +55,39 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->subscribe('newSurveySettings');
 
             $this->subscribe('newDirectRequest');
+
+            $this->subscribe('newUnsecureRequest');
+        }
+
+        /**
+         * @throws CHttpException
+         * Unsecure means there is no CSRF.
+         */
+        public function newUnsecureRequest() {
+            if ($this->event->get('target') == __CLASS__) {
+                /** @var CHttpRequest $request */
+                $request = $this->event->get('request');
+                $surveyId = $request->getParam('surveyId');
+                $responseId = $request->getParam('responseId');
+                $token = $request->getParam('token');
+                if (!isset($token, $surveyId, $responseId)) {
+                    throw new \CHttpException(400, "Missing one or more mandatory parameters");
+                }
+                switch ($this->event->get("function")) {
+                    case 'copy':
+                        if (!$this->repeatEnabled($surveyId)) {
+                            throw new \CHttpException(403, "Repeating not enabled for this survey");
+                        }
+
+                        if (!$request->isPostRequest) {
+                            throw new \CHttpException(405, "This endpoint only supports POST");
+                        }
+                        $this->createCopy($surveyId, $responseId);
+                        break;
+                    default:
+                        throw new \CHttpException(404, "Unknown endpoint");
+                }
+            }
         }
 
         /**
@@ -179,10 +212,14 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
          * @param $surveyId
          * @param $responseId
          */
-        protected function createCopy($surveyId, $responseId)
+        protected function createCopy($surveyId, $responseId, $token = null)
         {
             if (null === $response = \Response::model($surveyId)->findByPk($responseId)) {
                 throw new \CHttpException(404, "Response not found.");
+            }
+
+            if (isset($token) && !$response->token === $token) {
+                throw new \CHttpException(403, "Token not valid");
             }
 
             $response->id = null;
