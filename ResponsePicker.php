@@ -82,7 +82,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         if (!$request->isPostRequest) {
                             throw new \CHttpException(405, "This endpoint only supports POST");
                         }
-                        $this->createCopy($surveyId, $responseId);
+                        $this->createCopy($surveyId, $responseId, $token);
                         break;
                     default:
                         throw new \CHttpException(404, "Unknown endpoint");
@@ -98,9 +98,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
          * @throws CException
          * @throws Exception
          */
-        protected function viewResponse($response, $surveyId)
+        private function viewResponse($response, $surveyId, $language)
         {
-            $aFields = array_keys(createFieldMap($surveyId, 'full', true, false, 'en'));
+            $aFields = array_keys(createFieldMap($surveyId, 'full', true, false, $language));
 
             App()->loadHelper('admin.exportresults');
             App()->loadHelper('export');
@@ -185,7 +185,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                         }
                         $response = $this->api->getResponse($surveyId, $responseId);
                         if (isset($response)) {
-                            $this->viewResponse($response, $surveyId);
+                            $this->viewResponse($response, $surveyId, $request->getParam('language', 'en'));
                         } else {
                             throw new \CHttpException(404, "Response not found.");
                         }
