@@ -123,7 +123,8 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $sTempFile = $oExport->exportSurvey($surveyId, $language, 'json', $oFormattingOptions, '');
             $data = array_values(json_decode(file_get_contents($sTempFile), true)['responses'][0])[0];
 
-            $out = '<html><title></title><body><table>';
+            $out = '<html><head><meta charset="UTF-8"></head>
+                <title></title><body><table>';
             foreach ($data as $key => $value) {
                 $row = "";
                 if (!empty($value)) {
