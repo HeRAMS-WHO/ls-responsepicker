@@ -120,7 +120,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
 
 
-            $sTempFile = $oExport->exportSurvey($surveyId, 'en', 'json', $oFormattingOptions, '');
+            $sTempFile = $oExport->exportSurvey($surveyId, $language, 'json', $oFormattingOptions, '');
             $data = array_values(json_decode(file_get_contents($sTempFile), true)['responses'][0])[0];
 
             $out = '<html><title></title><body><table>';
