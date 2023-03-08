@@ -399,18 +399,29 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['en']['No text found for'] = 'No text found for';
             $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
             $this->translation['ar']['No text found for'] = 'لم يتم ايجاد نص ل';
-            $this->translation['en']['Add a new response'] = 'Add a new response';
-            $this->translation['fr']['Add a new response'] = 'Ajouter une réponse';
-            $this->translation['ar']['Add a new response'] = 'اضف إجابة';
+            $this->translation['en']['Add an update'] = 'Add an update';
+            $this->translation['fr']['Add an update'] = 'Ajouter une mise à jour';
+            $this->translation['ar']['Add an update'] = 'إضافة تحديث جديد';
+            $this->translation['pt']['Add an update'] = 'Acrescentar uma nova resposta';
+            $this->translation['uk']['Add an update'] = 'Додати нову відповідь';
             $this->translation['en']['Response id'] = 'Response id';
             $this->translation['fr']['Response id'] = 'ID de la réponse';
             $this->translation['ar']['Response id'] = 'رقم الاستجابة';
+            $this->translation['pt']['Response id'] = 'Codigo de resposta';
+            $this->translation['uk']['Response id'] = 'ID відповіді';
             $this->translation['en']['Date of update'] = 'Date of update';
             $this->translation['fr']['Date of update'] = 'Date de mise à jour';
             $this->translation['ar']['Date of update'] = 'تاريخ تحديث الإستبيان';
             $this->translation['en']['Actions'] = 'Actions';
             $this->translation['fr']['Actions'] = 'Actions';
             $this->translation['ar']['Actions'] = 'إجراءات';
+            $this->translation['pt']['Actions'] = 'Acções';
+            $this->translation['uk']['Actions'] = 'Дії';
+            $this->translation['en']['New'] = 'New';
+            $this->translation['fr']['New'] = 'Nouveau';
+            $this->translation['ar']['New'] = 'جديد';
+            $this->translation['pt']['New'] = 'Novo';
+            $this->translation['uk']['New'] = 'Нова';
         }
 
         protected function getTranslation($lang, $key)
@@ -579,7 +590,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             'label' => '<i class="oi oi-plus"></i>',
                             'imageUrl' => false,
                             'options' => [
-                                'title' => $this->getTranslation($this->language, 'Add a new response'),
+                                'title' => $this->getTranslation($this->language, 'Add an update'),
                                 'data-method' => 'post',
                                 'data-body' => json_encode([
                                     $request->csrfTokenName => $request->csrfToken
@@ -982,7 +993,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
 
                 table tbody tr.new td:nth-child(2):after, .table.new tbody tr:nth-child(2) td.update-column:after {
-                    content: "New";
+                    content: {$this->getTranslation('New')};
                     font-size: 11px;
                     background: #60cb00;
                     color: white;
