@@ -396,22 +396,26 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
         protected function setTranslations()
         {
-            $this->translation['en']['No text found for'] = 'No text found for';
-            $this->translation['fr']['No text found for'] = 'Pas de donnée pour';
-            $this->translation['ar']['No text found for'] = 'لم يتم ايجاد نص ل';
+            $this->translation['en']['No data found for'] = 'No data found for';
+            $this->translation['fr']['No data found for'] = 'Pas de donnée pour';
+            $this->translation['ar']['No data found for'] = 'لم يتم ايجاد نص ل';
+            $this->translation['pt']['No data found for'] = 'Sem dados para';
+            $this->translation['uk']['No data found for'] = 'Немає даних';
             $this->translation['en']['Add an update'] = 'Add an update';
             $this->translation['fr']['Add an update'] = 'Ajouter une mise à jour';
             $this->translation['ar']['Add an update'] = 'إضافة تحديث جديد';
             $this->translation['pt']['Add an update'] = 'Acrescentar uma nova resposta';
             $this->translation['uk']['Add an update'] = 'Додати нову відповідь';
-            $this->translation['en']['Response id'] = 'Response id';
-            $this->translation['fr']['Response id'] = 'ID de la réponse';
-            $this->translation['ar']['Response id'] = 'رقم الاستجابة';
-            $this->translation['pt']['Response id'] = 'Codigo de resposta';
-            $this->translation['uk']['Response id'] = 'ID відповіді';
+            $this->translation['en']['Update ID'] = 'Update ID';
+            $this->translation['fr']['Update ID'] = 'Id de la réponse';
+            $this->translation['ar']['Update ID'] = 'رقم التحديث';
+            $this->translation['pt']['Update ID'] = 'Codigo de resposta';
+            $this->translation['uk']['Update ID'] = 'ID відповіді';
             $this->translation['en']['Date of update'] = 'Date of update';
             $this->translation['fr']['Date of update'] = 'Date de mise à jour';
-            $this->translation['ar']['Date of update'] = 'تاريخ تحديث الإستبيان';
+            $this->translation['ar']['Date of update'] = 'تاريخ التحديث';
+            $this->translation['pt']['Date of update'] = 'Data de actualização';
+            $this->translation['uk']['Date of update'] = 'Дата оновлення';
             $this->translation['en']['Actions'] = 'Actions';
             $this->translation['fr']['Actions'] = 'Actions';
             $this->translation['ar']['Actions'] = 'إجراءات';
@@ -422,6 +426,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['ar']['New'] = 'جديد';
             $this->translation['pt']['New'] = 'Novo';
             $this->translation['uk']['New'] = 'Нова';
+            $this->translation['en']['# of updates'] = '# of updates';
+            $this->translation['fr']['# of updates'] = '# de mises à jour';
+            $this->translation['ar']['# of updates'] = 'عدد التحديثات';
+            $this->translation['pt']['# of updates'] = '# de resposta';
+            $this->translation['uk']['# of updates'] = '# оновлень';
         }
 
         protected function getTranslation($lang, $key)
@@ -548,7 +557,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
             $gridColumns['count'] = [
                 'name' => 'count',
-                'header' => '# Responses',
+                'header' => $this->getTranslation($this->language, '# of updates'),
                 'htmlOptions' => [
                     'width' => '20px',
                 ],
@@ -702,7 +711,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
                             if (isset($answers[$row['data'][$name]])) {
                                 return $answers[$row['data'][$name]]->answer;
                             } else {
-                                return $this->getTranslation($this->language, 'No text found for') . " $name";
+                                return $this->getTranslation($this->language, 'No data found for') . " $name";
                             }
                         };
                     }
@@ -787,11 +796,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             } else {
                 $updateHeader = $this->getTranslation($this->language, 'Date of update');
             }
-            $idHeader = "Response id";
+            $idHeader = "Update ID";
             if (array_key_exists('qid', $gridColumns)) {
                 $idHeader = strpos($gridColumns['qid']['header'], ':') !== false ? explode(':', $gridColumns['qid']['header'])[0] : $gridColumns['qid']['header'];
             } else {
-                $idHeader =  $this->getTranslation($this->language, 'Response id');
+                $idHeader =  $this->getTranslation($this->language, 'Update ID');
             }
             $responsesColumns = [];
             $responsesColumns['actions'] = ["name" => "actions", "header" => $this->getTranslation($this->language, 'Actions'), "filter" => false];
@@ -1274,7 +1283,7 @@ CSS
                             cell.innerHTML = childData["data_"+column];
                             if(childData["data_"+column].includes(':'))
                                 cell.innerHTML = childData["data_"+column].split(':')[0];
-                            if(cell.innerHTML == 'No text found for') cell.innerHTML = 'no data';
+                            if(cell.innerHTML == 'No data found for') cell.innerHTML = 'no data';
                             cell.classList.add(columns[column].name+'-column');
                         }
                         row.appendChild(cell);
