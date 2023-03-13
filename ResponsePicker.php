@@ -796,7 +796,6 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             } else {
                 $updateHeader = $this->getTranslation($this->language, 'Date of update');
             }
-            $idHeader = "Update ID";
             if (array_key_exists('qid', $gridColumns)) {
                 $idHeader = strpos($gridColumns['qid']['header'], ':') !== false ? explode(':', $gridColumns['qid']['header'])[0] : $gridColumns['qid']['header'];
             } else {
