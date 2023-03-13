@@ -1009,7 +1009,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
 
                 table tbody tr.new td:nth-child(2):after, .table.new tbody tr:nth-child(2) td.update-column:after {
-                    content: "{$this->getTranslation('New')}";
+                    content: "{$this->getTranslation($this->language,'New')}";
                     font-size: 11px;
                     background: #60cb00;
                     color: white;
