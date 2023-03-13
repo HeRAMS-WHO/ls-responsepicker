@@ -394,6 +394,9 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $event->set("surveysettings.{$this->id}", $settings);
         }
 
+        /** Adding double quote is forbidden
+         * @return void
+         */
         protected function setTranslations()
         {
             $this->translation['en']['No data found for'] = 'No data found for';
@@ -433,6 +436,11 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
             $this->translation['uk']['# of updates'] = '# оновлень';
         }
 
+        /**
+         * @param string $lang
+         * @param string $key
+         * @return string
+         */
         protected function getTranslation($lang, $key)
         {
             if (!array_key_exists($lang, $this->translation))
@@ -1001,7 +1009,7 @@ if (($_GET['test'] ?? '' === 'ResponsePicker') && file_exists(__DIR__ . '/test/R
 
 
                 table tbody tr.new td:nth-child(2):after, .table.new tbody tr:nth-child(2) td.update-column:after {
-                    content: {$this->getTranslation('New')};
+                    content: "{$this->getTranslation('New')}";
                     font-size: 11px;
                     background: #60cb00;
                     color: white;
